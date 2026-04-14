@@ -1,0 +1,806 @@
+{
+  "meta": {
+    "name": "2D Fighter Template",
+    "version": "0.1.0",
+    "based_on": "MUGEN CNS state system",
+    "description": "Complete animation requirements for a 2D fighting game character. Defines every sprite state needed, frame counts, hitbox data, and generation prompts.",
+    "sprite_size": "auto",
+    "color_limit": 16,
+    "notes": "sprite_size can be 'auto' (detect from input image), or explicit like '64x96'. Frame counts are recommendations — user can adjust."
+  },
+
+  "categories": {
+    "movement": {
+      "label": "Core Movement",
+      "description": "Basic locomotion — every fighter needs these",
+      "priority": 1
+    },
+    "standing_attacks": {
+      "label": "Standing Attacks",
+      "description": "Normal attacks while standing (6 buttons: LP, SP, LK, SK + close variants)",
+      "priority": 2
+    },
+    "crouching_attacks": {
+      "label": "Crouching Attacks",
+      "description": "Normal attacks while crouching",
+      "priority": 2
+    },
+    "aerial_attacks": {
+      "label": "Aerial Attacks",
+      "description": "Normal attacks while airborne",
+      "priority": 2
+    },
+    "defensive": {
+      "label": "Defensive",
+      "description": "Blocking, dodging, teching",
+      "priority": 3
+    },
+    "hit_reactions": {
+      "label": "Hit Reactions",
+      "description": "How the character reacts to getting hit",
+      "priority": 3
+    },
+    "special_moves": {
+      "label": "Special Moves",
+      "description": "Unique character-specific moves",
+      "priority": 4,
+      "customizable": true
+    },
+    "super_moves": {
+      "label": "Super Moves",
+      "description": "High-damage meter-burn moves",
+      "priority": 5,
+      "customizable": true
+    },
+    "system": {
+      "label": "System Animations",
+      "description": "Intro, win pose, KO, time over",
+      "priority": 6
+    }
+  },
+
+  "states": [
+
+    {
+      "id": 0,
+      "name": "idle",
+      "label": "Idle / Standing",
+      "category": "movement",
+      "frames": { "min": 4, "recommended": 6, "max": 12 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "Standing neutral pose. Subtle breathing/weight shift animation. The 'default' state everything returns to.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "idle standing animation, subtle breathing movement, character standing neutral, weight shifting slightly between feet",
+      "common_issues": ["too much movement (should be subtle)", "head bobbing unnaturally", "arms clipping through body"]
+    },
+
+    {
+      "id": 10,
+      "name": "stand_to_crouch",
+      "label": "Stand to Crouch Transition",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Transition from standing to crouching. Quick dip downward.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character transitioning from standing to crouching pose, knees bending, body lowering",
+      "common_issues": ["teleporting to crouch instead of transitioning", "knees bending wrong direction"]
+    },
+
+    {
+      "id": 11,
+      "name": "crouch_idle",
+      "label": "Crouching Idle",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 4, "max": 6 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "Crouching pose, ready to act. Low profile for dodging high attacks.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character crouching low, knees bent, ready stance, slight idle movement",
+      "common_issues": ["too tall (should be roughly half standing height)", "arms in wrong position"]
+    },
+
+    {
+      "id": 12,
+      "name": "crouch_to_stand",
+      "label": "Crouch to Stand Transition",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Transition from crouching back to standing.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character rising from crouch to standing position, straightening legs",
+      "common_issues": ["rising too fast", "skipping frames to standing"]
+    },
+
+    {
+      "id": 20,
+      "name": "walk_forward",
+      "label": "Walk Forward",
+      "category": "movement",
+      "frames": { "min": 6, "recommended": 8, "max": 12 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Walking toward opponent. Must alternate legs correctly — left foot forward then right foot forward.",
+      "hitbox": false,
+      "hurtbox": true,
+      "velocity": { "x": 3.0, "y": 0.0 },
+      "generation_prompt": "walking forward animation, character moving toward viewer, alternating leg stride, natural walking motion",
+      "common_issues": ["both legs doing the same thing", "sliding instead of walking", "upper body not moving", "drifting off center"]
+    },
+
+    {
+      "id": 21,
+      "name": "walk_backward",
+      "label": "Walk Backward",
+      "category": "movement",
+      "frames": { "min": 6, "recommended": 8, "max": 12 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Walking away from opponent (retreating). Typically mirrors walk forward but with defensive posture.",
+      "hitbox": false,
+      "hurtbox": true,
+      "velocity": { "x": -2.5, "y": 0.0 },
+      "generation_prompt": "walking backward animation, character retreating, defensive posture, alternating leg stride moving backward",
+      "common_issues": ["same as walk forward but flipped (should be distinct)", "facing wrong direction"]
+    },
+
+    {
+      "id": 40,
+      "name": "jump_start",
+      "label": "Jump Start (Pre-Jump)",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Crouching down before the jump. Anticipation frame. Player is still grounded.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character squatting down before jumping, anticipation pose, knees deeply bent, about to launch upward",
+      "common_issues": ["too long (should be very quick)", "already airborne in the sprite"]
+    },
+
+    {
+      "id": 50,
+      "name": "jump_rise",
+      "label": "Jump Rising",
+      "category": "movement",
+      "frames": { "min": 1, "recommended": 2, "max": 3 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Character moving upward through the air. Legs tucked or extended depending on style.",
+      "hitbox": false,
+      "hurtbox": true,
+      "velocity": { "x": 0.0, "y": -9.0 },
+      "generation_prompt": "character jumping upward, airborne, rising motion, legs tucked or extended, dynamic upward pose",
+      "common_issues": ["looking static (should convey upward momentum)"]
+    },
+
+    {
+      "id": 51,
+      "name": "jump_fall",
+      "label": "Jump Falling",
+      "category": "movement",
+      "frames": { "min": 1, "recommended": 2, "max": 3 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Character descending through the air. Peak of jump has been reached.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character falling downward through air, descending motion, gravity pulling down, arms slightly raised",
+      "common_issues": ["identical to jump rise (should show different pose)"]
+    },
+
+    {
+      "id": 52,
+      "name": "jump_land",
+      "label": "Landing",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Character touching ground after jump. Impact recovery. Knees absorb shock.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character landing from a jump, knees bent absorbing impact, touching down on ground, recovery pose",
+      "common_issues": ["no impact in the pose", "too similar to crouch"]
+    },
+
+    {
+      "id": 100,
+      "name": "run_forward",
+      "label": "Run Forward",
+      "category": "movement",
+      "frames": { "min": 6, "recommended": 8, "max": 12 },
+      "loop": true,
+      "duration_per_frame": 3,
+      "description": "Full sprint toward opponent. Faster than walk, more dynamic. Leaning forward.",
+      "hitbox": false,
+      "hurtbox": true,
+      "velocity": { "x": 5.5, "y": 0.0 },
+      "generation_prompt": "running forward animation, full sprint, leaning forward, dynamic running motion, arms pumping, legs alternating at speed",
+      "common_issues": ["looks like fast walk instead of run", "upper body too upright", "both feet off ground every frame (unnatural)"]
+    },
+
+    {
+      "id": 105,
+      "name": "hop_back",
+      "label": "Hop Back / Backdash",
+      "category": "movement",
+      "frames": { "min": 4, "recommended": 6, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Quick backward hop to create distance. Defensive repositioning move. Can be invincible on startup in some games.",
+      "hitbox": false,
+      "hurtbox": true,
+      "velocity": { "x": -5.0, "y": -4.0 },
+      "generation_prompt": "character hopping backward, quick defensive leap away, body leaning back, feet leaving ground, backward momentum",
+      "common_issues": ["looks like jump (should be shorter/hop height)", "facing wrong direction"]
+    },
+
+    {
+      "id": 200,
+      "name": "stand_light_punch",
+      "label": "Standing Light Punch",
+      "category": "standing_attacks",
+      "frames": { "min": 4, "recommended": 6, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Quick jab. Fast startup, low damage, good for combos. Recovery returns to idle.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 2,
+      "damage": { "base": 5, "scaling": 0.0 },
+      "frame_data": { "startup": 4, "active": 3, "recovery": 6, "total": 13 },
+      "generation_prompt": "quick jab punch animation, fast straight punch forward, fist extending, quick snap motion, light attack",
+      "common_issues": ["too slow/telegraphed for a light attack", "fist not extending far enough", "too much wind-up"]
+    },
+
+    {
+      "id": 210,
+      "name": "stand_strong_punch",
+      "label": "Standing Strong Punch",
+      "category": "standing_attacks",
+      "frames": { "min": 5, "recommended": 8, "max": 12 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Heavy punch. Slower startup, more damage, more recovery. Significant wind-up.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 4,
+      "damage": { "base": 15, "scaling": 0.1 },
+      "frame_data": { "startup": 8, "active": 4, "recovery": 14, "total": 26 },
+      "generation_prompt": "strong powerful punch animation, wind-up pulling fist back, powerful forward strike, heavy impact pose, strong attack",
+      "common_issues": ["not enough wind-up", "impact frame not distinct", "too similar to light punch"]
+    },
+
+    {
+      "id": 220,
+      "name": "stand_light_kick",
+      "label": "Standing Light Kick",
+      "category": "standing_attacks",
+      "frames": { "min": 4, "recommended": 6, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Quick kick. Short range, fast. Usually aimed low.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 2,
+      "damage": { "base": 5, "scaling": 0.0 },
+      "frame_data": { "startup": 4, "active": 3, "recovery": 6, "total": 13 },
+      "generation_prompt": "quick light kick animation, fast snapping kick, low kick extending forward, quick recovery, light kick attack",
+      "common_issues": ["kick going too high", "balance off (character falling over)"]
+    },
+
+    {
+      "id": 230,
+      "name": "stand_strong_kick",
+      "label": "Standing Strong Kick",
+      "category": "standing_attacks",
+      "frames": { "min": 5, "recommended": 8, "max": 12 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Heavy kick. Roundhouse or thrust kick. More range and damage than light kick.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 4,
+      "damage": { "base": 15, "scaling": 0.1 },
+      "frame_data": { "startup": 8, "active": 4, "recovery": 14, "total": 26 },
+      "generation_prompt": "strong kick animation, powerful roundhouse or thrust kick, full leg extension, heavy kicking motion, dynamic strong kick",
+      "common_issues": ["leg not extending fully", "looks like light kick with more frames"]
+    },
+
+    {
+      "id": 400,
+      "name": "crouch_light_punch",
+      "label": "Crouching Light Punch",
+      "category": "crouching_attacks",
+      "frames": { "min": 4, "recommended": 5, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Quick punch while crouching. Low profile attack.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 2,
+      "damage": { "base": 4, "scaling": 0.0 },
+      "frame_data": { "startup": 3, "active": 3, "recovery": 5, "total": 11 },
+      "guardflag": "L",
+      "generation_prompt": "crouching punch animation, character in low crouch position throwing a quick punch forward, low attack from crouch",
+      "common_issues": ["character standing up to punch (must stay crouched)", "punch aimed too high"]
+    },
+
+    {
+      "id": 410,
+      "name": "crouch_strong_punch",
+      "label": "Crouching Strong Punch",
+      "category": "crouching_attacks",
+      "frames": { "min": 5, "recommended": 7, "max": 10 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Heavy crouching punch. Often an uppercut that hits opponents above.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 3,
+      "damage": { "base": 12, "scaling": 0.1 },
+      "frame_data": { "startup": 6, "active": 4, "recovery": 16, "total": 26 },
+      "guardflag": "MA",
+      "generation_prompt": "crouching uppercut animation, character rising slightly with powerful upward punch, anti-air crouch attack, strong crouching punch",
+      "common_issues": ["character fully standing (should stay mostly crouched)", "punch going forward instead of up"]
+    },
+
+    {
+      "id": 420,
+      "name": "crouch_light_kick",
+      "label": "Crouching Light Kick",
+      "category": "crouching_attacks",
+      "frames": { "min": 4, "recommended": 5, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Quick low sweep kick. Hits opponents' feet. Must be blocked low.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 2,
+      "damage": { "base": 4, "scaling": 0.0 },
+      "frame_data": { "startup": 4, "active": 3, "recovery": 7, "total": 14 },
+      "guardflag": "L",
+      "generation_prompt": "crouching low kick animation, character sweeping leg along the ground, low sweep kick from crouch position",
+      "common_issues": ["kick going too high (must be ground level)", "character standing up"]
+    },
+
+    {
+      "id": 430,
+      "name": "crouch_strong_kick",
+      "label": "Crouching Strong Kick",
+      "category": "crouching_attacks",
+      "frames": { "min": 5, "recommended": 7, "max": 10 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Heavy sweep kick. Trips the opponent. Knockdown move.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 3,
+      "damage": { "base": 12, "scaling": 0.1 },
+      "frame_data": { "startup": 7, "active": 4, "recovery": 16, "total": 27 },
+      "guardflag": "L",
+      "hit_type": "trip",
+      "generation_prompt": "crouching sweep kick animation, full leg sweep along ground, powerful low sweep that would trip opponent, spinning low kick from crouch",
+      "common_issues": ["not sweeping low enough", "spin looks unnatural", "character sliding during sweep"]
+    },
+
+    {
+      "id": 600,
+      "name": "jump_light_punch",
+      "label": "Jump Light Punch",
+      "category": "aerial_attacks",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Quick punch while airborne. Used for air-to-air or jump-in pressure.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 1,
+      "damage": { "base": 5, "scaling": 0.0 },
+      "frame_data": { "startup": 4, "active": 6, "recovery": 0 },
+      "generation_prompt": "airborne punch animation, character in mid-air throwing a quick punch downward or forward, aerial attack pose",
+      "common_issues": ["character looks grounded (must be clearly airborne)", "no sense of aerial position"]
+    },
+
+    {
+      "id": 610,
+      "name": "jump_strong_punch",
+      "label": "Jump Strong Punch",
+      "category": "aerial_attacks",
+      "frames": { "min": 4, "recommended": 6, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Heavy punch while airborne. Big damage jump-in attack.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 2,
+      "damage": { "base": 14, "scaling": 0.1 },
+      "frame_data": { "startup": 6, "active": 5, "recovery": 0 },
+      "generation_prompt": "powerful aerial punch animation, character in mid-air with heavy downward punch, strong jump-in attack, dynamic airborne strike",
+      "common_issues": ["wind-up too long for airborne state", "not enough downward force in pose"]
+    },
+
+    {
+      "id": 620,
+      "name": "jump_light_kick",
+      "label": "Jump Light Kick",
+      "category": "aerial_attacks",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Quick kick while airborne. Fast air-to-air option.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 1,
+      "damage": { "base": 5, "scaling": 0.0 },
+      "frame_data": { "startup": 4, "active": 6, "recovery": 0 },
+      "generation_prompt": "airborne kick animation, character in mid-air doing a quick kick, aerial kick attack, light air kick",
+      "common_issues": ["kick not extending", "balance looks wrong in air"]
+    },
+
+    {
+      "id": 630,
+      "name": "jump_strong_kick",
+      "label": "Jump Strong Kick",
+      "category": "aerial_attacks",
+      "frames": { "min": 4, "recommended": 6, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Heavy kick while airborne. Often a dropkick or axe kick.",
+      "hitbox": true,
+      "hurtbox": true,
+      "hit_frame": 2,
+      "damage": { "base": 14, "scaling": 0.1 },
+      "frame_data": { "startup": 6, "active": 5, "recovery": 0 },
+      "generation_prompt": "powerful aerial kick animation, character in mid-air with heavy kick extending downward, dynamic jump-in kick, strong air attack",
+      "common_issues": ["leg not extending far enough", "motion blur on the kick leg"]
+    },
+
+    {
+      "id": 120,
+      "name": "stand_block",
+      "label": "Standing Block",
+      "category": "defensive",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Blocking while standing. Arms in defensive position. Only blocks high/mid attacks.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character blocking with arms raised in defensive stance, standing guard position, arms crossed or raised to protect face and torso",
+      "common_issues": ["looks like idle (should be clearly blocking)", "arms not in guard position"]
+    },
+
+    {
+      "id": 130,
+      "name": "crouch_block",
+      "label": "Crouching Block",
+      "category": "defensive",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Blocking while crouching. Only blocks low attacks.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character crouching and blocking, low defensive stance with arms protecting lower body, crouching guard position",
+      "common_issues": ["not low enough", "same as standing block but lower"]
+    },
+
+    {
+      "id": 140,
+      "name": "air_block",
+      "label": "Air Block",
+      "category": "defensive",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Blocking while airborne. Character floats slightly during block.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character blocking in mid-air, aerial guard pose, arms raised defensively while airborne, floating defensive position",
+      "common_issues": ["looks grounded", "same pose as standing block"]
+    },
+
+    {
+      "id": 5000,
+      "name": "stand_hit_high",
+      "label": "Standing Hit Reaction (High)",
+      "category": "hit_reactions",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Getting hit by a high/mid attack while standing. Head snaps back, body recoils.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character getting hit in the face or torso, recoiling backward, head snapping back, taking a hit reaction, pain expression",
+      "common_issues": ["not enough recoil", "looks like a pose not a reaction", "body not moving enough"]
+    },
+
+    {
+      "id": 5001,
+      "name": "stand_hit_low",
+      "label": "Standing Hit Reaction (Low)",
+      "category": "hit_reactions",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 2,
+      "description": "Getting hit by a low attack while standing. Body doubles over.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character getting hit in the legs or stomach area, body doubling over in pain, low hit reaction, bending from the hit",
+      "common_issues": ["same as high hit (should be distinct — body folds forward)"]
+    },
+
+    {
+      "id": 5020,
+      "name": "air_hit",
+      "label": "Air Hit Reaction",
+      "category": "hit_reactions",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Getting hit while airborne. Character tumbles through the air.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character getting hit while in the air, tumbling backward, spinning from impact, airborne hit reaction, ragdoll-like in air",
+      "common_issues": ["looks like a pose not a reaction", "body too rigid"]
+    },
+
+    {
+      "id": 5070,
+      "name": "trip_hit",
+      "label": "Tripped Hit Reaction",
+      "category": "hit_reactions",
+      "frames": { "min": 4, "recommended": 5, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Getting swept/tripped. Character falls to the ground sideways.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character being tripped, falling sideways to the ground, legs swept out from under them, horizontal falling animation",
+      "common_issues": ["falling backward instead of sideways", "too controlled (should look uncontrolled)"]
+    },
+
+    {
+      "id": 5100,
+      "name": "knockdown",
+      "label": "Knocked Down / Lying Down",
+      "category": "hit_reactions",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "Character on the ground after being knocked down. Lying on back or face.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character lying on the ground knocked down, fallen flat on back, defeated lying pose on the floor, knockdown state",
+      "common_issues": ["looks like a crouch (must be horizontal)", "character not actually on ground"]
+    },
+
+    {
+      "id": 5110,
+      "name": "getup",
+      "label": "Getting Up",
+      "category": "hit_reactions",
+      "frames": { "min": 4, "recommended": 6, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Character recovering from knockdown. Rolling to feet. Often has invincibility frames.",
+      "hitbox": false,
+      "hurtbox": true,
+      "generation_prompt": "character getting up from the ground, rolling to standing position, recovery animation from knockdown, rising from lying down",
+      "common_issues": ["too fast (should show a recovery process)", "skipping from ground to standing"]
+    },
+
+    {
+      "id": 5200,
+      "name": "ground_recovery",
+      "label": "Ground Tech / Recovery",
+      "category": "hit_reactions",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Quick recovery on ground. Character pops back up instantly instead of lying down. Timed input.",
+      "hitbox": false,
+      "hurtbox": false,
+      "generation_prompt": "character quickly rolling and popping back to feet, fast recovery roll, tech roll animation, instant ground recovery",
+      "common_issues": ["too slow (should be snappy)", "same as getup (should be faster/more energetic)"]
+    },
+
+    {
+      "id": 170,
+      "name": "win_pose",
+      "label": "Victory Pose",
+      "category": "system",
+      "frames": { "min": 6, "recommended": 10, "max": 16 },
+      "loop": false,
+      "duration_per_frame": 6,
+      "description": "Character's victory animation after winning a round. Personality moment.",
+      "hitbox": false,
+      "hurtbox": false,
+      "generation_prompt": "character celebrating victory, confident triumphant pose, victory animation, character showing personality after winning",
+      "common_issues": ["too subtle (should be a clear celebration)", "looping (should end on a held pose)"]
+    },
+
+    {
+      "id": 175,
+      "name": "draw",
+      "label": "Draw / Time Over",
+      "category": "system",
+      "frames": { "min": 3, "recommended": 5, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 6,
+      "description": "Animation for when time runs out. Usually a frustrated or neutral reaction.",
+      "hitbox": false,
+      "hurtbox": false,
+      "generation_prompt": "character reacting to time running out, frustrated or disappointed gesture, draw animation, looking annoyed",
+      "common_issues": ["same as idle (should show emotion)"]
+    },
+
+    {
+      "id": 190,
+      "name": "intro",
+      "label": "Intro Animation",
+      "category": "system",
+      "frames": { "min": 8, "recommended": 12, "max": 20 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Character entrance animation at round start. Establishes personality.",
+      "hitbox": false,
+      "hurtbox": false,
+      "generation_prompt": "character introduction entrance animation, dramatic entry pose, round start intro, walking in and taking fighting stance",
+      "common_issues": ["too short (should have buildup)", "ending pose doesn't match idle (jarring transition)"]
+    },
+
+    {
+      "id": 5080,
+      "name": "ko_fall",
+      "label": "KO Fall",
+      "category": "hit_reactions",
+      "frames": { "min": 4, "recommended": 6, "max": 10 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Character falling down after being KO'd. Dramatic final hit reaction.",
+      "hitbox": false,
+      "hurtbox": false,
+      "generation_prompt": "character being knocked out, dramatic fall to the ground, defeated KO animation, collapsing after final blow",
+      "common_issues": ["not dramatic enough", "looks like normal knockdown"]
+    },
+
+    {
+      "id": 1000,
+      "name": "special_1",
+      "label": "Special Move 1 (Projectile)",
+      "category": "special_moves",
+      "frames": { "min": 6, "recommended": 8, "max": 14 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Projectile special (e.g., Hadouken). Wind-up, release, recovery. Projectile sprite generated separately.",
+      "hitbox": true,
+      "hurtbox": true,
+      "customizable": true,
+      "input": "quarter_circle_forward + punch",
+      "damage": { "base": 20, "scaling": 0.2 },
+      "frame_data": { "startup": 12, "active": 0, "recovery": 22, "total": 34 },
+      "generation_prompt": "character performing a projectile attack motion, wind-up then thrusting hands forward to release energy, special move fireball",
+      "common_issues": ["no wind-up (specials need buildup)", "release frame not distinct from wind-up"]
+    },
+
+    {
+      "id": 1100,
+      "name": "special_2",
+      "label": "Special Move 2 (Anti-Air)",
+      "category": "special_moves",
+      "frames": { "min": 6, "recommended": 8, "max": 12 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Rising anti-air attack (e.g., Dragon Punch). Character leaps upward with an attack.",
+      "hitbox": true,
+      "hurtbox": true,
+      "customizable": true,
+      "input": "forward, down, down_forward + punch",
+      "damage": { "base": 25, "scaling": 0.3 },
+      "frame_data": { "startup": 4, "active": 12, "recovery": 24, "total": 40 },
+      "generation_prompt": "character performing a rising uppercut attack, leaping upward with fist extended, dragon punch anti-air special move, powerful rising strike",
+      "common_issues": ["not rising (should go UP)", "fist not leading the upward motion"]
+    },
+
+    {
+      "id": 1200,
+      "name": "special_3",
+      "label": "Special Move 3 (Command Attack)",
+      "category": "special_moves",
+      "frames": { "min": 6, "recommended": 8, "max": 12 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Unique character-specific move. Custom input and properties.",
+      "hitbox": true,
+      "hurtbox": true,
+      "customizable": true,
+      "input": "custom",
+      "damage": { "base": 18, "scaling": 0.15 },
+      "frame_data": { "startup": 10, "active": 6, "recovery": 18, "total": 34 },
+      "generation_prompt": "character performing a unique special attack, character-specific fighting technique, distinctive special move animation",
+      "common_issues": ["too generic", "doesn't show unique character personality"]
+    },
+
+    {
+      "id": 3000,
+      "name": "super_1",
+      "label": "Level 1 Super",
+      "category": "super_moves",
+      "frames": { "min": 12, "recommended": 16, "max": 24 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Super move. Dramatic wind-up with flash, multi-hit or powerful single hit. Uses meter.",
+      "hitbox": true,
+      "hurtbox": true,
+      "customizable": true,
+      "input": "quarter_circle_forward x2 + punch",
+      "damage": { "base": 50, "scaling": 0.5 },
+      "frame_data": { "startup": 8, "active": 20, "recovery": 30, "total": 58 },
+      "requires_meter": 1,
+      "generation_prompt": "character performing a dramatic super move, intense energy gathering then explosive attack, super combo animation, flashy powerful special",
+      "common_issues": ["not dramatic enough for a super", "energy effects look flat", "ending pose weak"]
+    }
+
+  ],
+
+  "min_viable_set": {
+    "label": "Minimum Viable Fighter",
+    "description": "The bare minimum animations to have a playable character",
+    "state_ids": [0, 20, 40, 50, 51, 52, 200, 210, 220, 230, 400, 410, 600, 610, 120, 5000, 5020, 5100, 5110, 190, 170],
+    "total_states": 21,
+    "estimated_frames": "80-120"
+  },
+
+  "standard_set": {
+    "label": "Standard Fighter",
+    "description": "Everything needed for a competitive-quality character",
+    "state_ids": [0, 10, 11, 12, 20, 21, 40, 50, 51, 52, 100, 105, 200, 210, 220, 230, 400, 410, 420, 430, 600, 610, 620, 630, 120, 130, 140, 5000, 5001, 5020, 5070, 5100, 5110, 5200, 170, 175, 190, 5080, 1000, 1100, 1200, 3000],
+    "total_states": 42,
+    "estimated_frames": "200-350"
+  },
+
+  "analysis_config": {
+    "similarity_threshold": 0.92,
+    "palette_check": true,
+    "max_colors": 16,
+    "limb_detection": true,
+    "bg_transparency_check": true,
+    "frame_dimension_tolerance": 0.1,
+    "duplicate_detection": true,
+    "quality_metrics": {
+      "edge_sharpness": { "min": 0.3, "max": 1.0 },
+      "color_variance": { "min": 0.05, "max": 0.8 },
+      "pixel_density": { "min": 0.15, "max": 0.95 },
+      "symmetry_check": true
+    }
+  },
+
+  "export_formats": {
+    "sprite_sheet": {
+      "format": "PNG",
+      "transparency": true,
+      "layout": "horizontal"
+    },
+    "frame_data": {
+      "format": "JSON",
+      "includes": ["state_id", "frame_index", "duration", "hitbox", "hurtbox", "damage"]
+    },
+    "mugen_cns": {
+      "format": "TXT",
+      "description": "MUGEN-compatible CNS state definitions"
+    }
+  }
+}

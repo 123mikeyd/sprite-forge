@@ -1,0 +1,23 @@
+# Sprite Forge Configuration
+# Copy to config.yaml and fill in your keys
+
+fal_ai:
+  api_key: "YOUR_FAL_KEY_HERE"  # Get from fal.ai/dashboard/keys
+
+gemini:
+  api_key: "YOUR_GEMINI_KEY_HERE"  # For frame analysis / labeling
+
+defaults:
+  sprite_size: "auto"  # "auto" or "64x96"
+  color_limit: 16
+  template: "fighter"  # Default genre template
+
+generation:
+  model: "nano-banana-2"  # fal.ai model for sprite generation
+  bg_removal: "bria"      # Background removal service
+  max_retries: 3
+  cost_per_gen: 0.20      # USD estimate
+
+analysis:
+  similarity_threshold: 0.92  # Frames above this = likely duplicate
+  auto_flag: true             # Auto-flag known issues from template
