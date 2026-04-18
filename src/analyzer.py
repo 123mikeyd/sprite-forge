@@ -57,6 +57,19 @@ def is_background(r, g, b, bg_color, tolerance=30):
             abs(int(b) - bg_color[2]) <= tolerance)
 
 
+def is_transparent(r, g, b, a=None):
+    """Detect fully- or mostly-transparent pixels (PNG alpha channel).
+
+    This is the MOST RELIABLE signal when a sprite sheet has real
+    transparency — the RGB channels of transparent pixels are often
+    (0,0,0) or noise, so RGB-only checks misclassify sprites that
+    happen to contain dark pixels as background.
+    """
+    if a is None:
+        return False
+    return a < 32
+
+
 def is_green_screen(r, g, b):
     """Detect green screen background (bright green #00FF00)."""
     return r < 80 and g > 160 and b < 80
@@ -73,8 +86,28 @@ def is_light_bg(r, g, b):
 
 
 def detect_bg_mode(img_arr):
-    """Auto-detect the background type from the image."""
+    """Auto-detect the background type from the image.
+
+    Priority:
+      1. If image has alpha and >50% of border pixels are transparent → "transparent"
+      2. Otherwise, sample and pick most common of green/dark/light/other
+    """
     h, w = img_arr.shape[:2]
+
+    # Alpha-first check — this is the #1 failure mode in public-domain
+    # sprite sheets (they're almost always PNG with real transparency).
+    if img_arr.shape[2] == 4:
+        # Sample border for alpha density
+        border_alphas = []
+        border_alphas.extend(img_arr[0, :, 3].tolist())
+        border_alphas.extend(img_arr[-1, :, 3].tolist())
+        border_alphas.extend(img_arr[:, 0, 3].tolist())
+        border_alphas.extend(img_arr[:, -1, 3].tolist())
+        transparent_pct = sum(1 for a in border_alphas if a < 32) / len(border_alphas)
+        if transparent_pct > 0.5:
+            print(f"  BG detection: transparent ({transparent_pct*100:.0f}% of border is alpha<32)")
+            return "transparent"
+
     sample_size = min(2000, h * w // 10)
     indices = np.random.choice(h * w, sample_size, replace=False)
 
@@ -108,10 +141,21 @@ def create_content_mask(img_arr, bg_mode="auto", tolerance=30):
         bg_mode = detect_bg_mode(img_arr)
 
     bg_color = detect_bg_color(img_arr) if bg_mode == "custom" else None
+    has_alpha = img_arr.shape[2] == 4
+
+    # Fast vectorized path for "transparent" mode (the common case for
+    # public-domain sprite sheets). Much faster than the Python loop.
+    if bg_mode == "transparent":
+        if has_alpha:
+            mask = img_arr[:, :, 3] >= 32
+            return mask
+        # No alpha channel but caller asked for transparent — fall back to dark
+        bg_mode = "dark"
 
     for y in range(h):
         for x in range(w):
             r, g, b = int(img_arr[y, x, 0]), int(img_arr[y, x, 1]), int(img_arr[y, x, 2])
+            a = int(img_arr[y, x, 3]) if has_alpha else None
 
             if bg_mode == "green":
                 if not is_green_screen(r, g, b):
@@ -131,10 +175,15 @@ def create_content_mask(img_arr, bg_mode="auto", tolerance=30):
 
 # ─── Frame Detection ─────────────────────────────────────────────────────
 
-def find_frame_bounds(mask, min_width=20, min_height=20, padding=5):
+def find_frame_bounds(mask, min_width=8, min_height=8, padding=5):
     """
     Detect individual sprite frames from a content mask.
     Returns list of (x, y, w, h) bounding boxes.
+
+    min_width/min_height default to 8 — deliberately low so small pixel-art
+    sprites (16x16 tiles, narrow idle poses) aren't filtered out. Set higher
+    only if the sheet has isolated-pixel noise that's being picked up as
+    tiny frames.
     """
     h, w = mask.shape
 
@@ -427,7 +476,7 @@ def density_barcode(img_arr, y1, y2, x1, x2, bg_mode="auto"):
 # ─── Full Pipeline ────────────────────────────────────────────────────────
 
 def analyze_sheet(image_path, bg_mode="auto", compress=1.0, padding=5,
-                  min_width=20, min_height=20):
+                  min_width=8, min_height=8):
     """
     Full analysis pipeline: load → compress → detect → analyze → return results.
     Returns dict with all analysis data.
@@ -529,6 +578,9 @@ def export_keyed_sheet(image_path, bg_mode="auto", compress=1.0, output_path=Non
                 is_bg = True
             elif bg_mode == "light" and is_light_bg(r, g, b):
                 is_bg = True
+            elif bg_mode == "transparent":
+                # Already has alpha; pass through unchanged
+                is_bg = False
 
             if is_bg:
                 arr[y, x, 3] = 0
@@ -547,16 +599,16 @@ def export_keyed_sheet(image_path, bg_mode="auto", compress=1.0, output_path=Non
 def main():
     parser = argparse.ArgumentParser(description="Sprite Forge Analyzer")
     parser.add_argument("image", help="Path to sprite sheet image")
-    parser.add_argument("--bg-mode", choices=["auto", "green", "dark", "light"],
+    parser.add_argument("--bg-mode", choices=["auto", "green", "dark", "light", "transparent"],
                         default="auto", help="Background detection mode")
     parser.add_argument("--compress", type=float, default=1.0,
                         help="Compression factor 0.1-1.0 (1.0 = original)")
     parser.add_argument("--padding", type=int, default=5,
                         help="Padding around detected frames (pixels)")
-    parser.add_argument("--min-width", type=int, default=20,
-                        help="Minimum frame width to detect")
-    parser.add_argument("--min-height", type=int, default=20,
-                        help="Minimum frame height to detect")
+    parser.add_argument("--min-width", type=int, default=8,
+                        help="Minimum frame width to detect (default 8)")
+    parser.add_argument("--min-height", type=int, default=8,
+                        help="Minimum frame height to detect (default 8)")
     parser.add_argument("--output", "-o", help="Output JSON path (default: <image>_frames.json)")
     parser.add_argument("--keyed", help="Export background-removed sheet to this path")
     parser.add_argument("--quiet", "-q", action="store_true", help="Less output")
