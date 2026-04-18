@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Forge — Curator</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #0a0a0a;
+    color: #d8d8d8;
+    margin: 0;
+    padding: 16px;
+  }
+  h1 { color: #7af; margin: 0 0 4px; font-size: 22px; }
+  h2 { color: #7af; margin: 14px 0 8px; font-size: 15px;
+       border-bottom: 1px solid #333; padding-bottom: 4px; }
+  p.note { color: #888; font-size: 13px; margin: 4px 0 10px; }
+
+  /* ───────── Help / instructions banner ───────── */
+  .help {
+    background: #0f1420; border: 1px solid #264; border-radius: 4px;
+    padding: 12px 16px; margin: 10px 0;
+    font-size: 13px; color: #aaa;
+    line-height: 1.5;
+  }
+  .help h3 { color: #7af; margin: 0 0 6px; font-size: 14px; }
+  .help ol { margin: 4px 0 4px 20px; padding: 0; }
+  .help li { margin-bottom: 3px; }
+  .help b { color: #cef; }
+
+  /* ───────── Capture mode banner ───────── */
+  .capture-banner {
+    display: none;
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(90deg, #1a3a1a 0%, #2a4a2a 100%);
+    border: 2px solid #5a5;
+    border-radius: 4px;
+    padding: 12px 16px; margin-bottom: 12px;
+    color: #cfc;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(90, 255, 90, 0.3);
+  }
+  .capture-banner.active { display: block; }
+  .capture-banner b { color: #fff; font-size: 16px; }
+  .capture-banner .hint { color: #afa; margin-top: 4px; font-size: 12px; }
+  .capture-banner button {
+    background: #4a7; color: #fff; border: 1px solid #6c9;
+    padding: 6px 14px; font-family: inherit; font-weight: bold;
+    cursor: pointer; margin-left: 10px; border-radius: 3px;
+  }
+  .capture-banner button.done { background: #485; }
+  .capture-banner button.cancel { background: #844; border-color: #a66; }
+  .capture-banner button:hover { filter: brightness(1.2); }
+
+  /* ───────── Cursor cursor state ───────── */
+  body.capture-mode * { cursor: crosshair !important; }
+  body.capture-mode .thumb { cursor: crosshair !important; }
+  body.capture-mode button,
+  body.capture-mode input,
+  body.capture-mode label { cursor: pointer !important; }
+
+  /* ───────── Panels ───────── */
+  .pane {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+
+  button {
+    background: #223; color: #7af;
+    border: 1px solid #445;
+    padding: 6px 12px;
+    font-family: inherit; font-size: 13px;
+    cursor: pointer;
+    margin: 2px;
+    border-radius: 2px;
+  }
+  button:hover { background: #334; color: #fff; }
+  button.primary { background: #245; color: #afd; border-color: #478; }
+  button.primary:hover { background: #356; color: #fff; }
+  button.big {
+    padding: 10px 20px; font-size: 14px; font-weight: bold;
+  }
+  button.danger  { background: #522; color: #faa; border-color: #844; }
+  button.small   { padding: 2px 6px; font-size: 11px; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  input[type=text], input[type=number] {
+    background: #1a1a1a; color: #d8d8d8;
+    border: 1px solid #444;
+    padding: 4px 8px;
+    font-family: inherit; font-size: 12px;
+  }
+  input[type=file] { font-size: 12px; color: #aaa; }
+
+  .status {
+    font-size: 12px; color: #888; margin-top: 6px; min-height: 16px;
+    padding: 4px 8px; background: #181818; border-left: 3px solid #444;
+  }
+  .status.ok { color: #afa; border-left-color: #2a5; }
+  .status.err { color: #faa; border-left-color: #a33; background: #201515; }
+  .status.info { color: #fea; border-left-color: #a85; }
+
+  /* ───────── Frame pool ───────── */
+  .thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    gap: 5px;
+    padding: 6px;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 3px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .thumb {
+    position: relative;
+    border: 2px solid #333;
+    background: repeating-conic-gradient(#222 0% 25%, #333 0% 50%) 50% / 8px 8px;
+    cursor: pointer;
+    padding: 2px;
+    text-align: center;
+    image-rendering: pixelated;
+    transition: border-color 0.1s, box-shadow 0.1s;
+  }
+  .thumb:hover { border-color: #7af; }
+  .thumb img {
+    display: block; width: 100%; max-height: 60px; object-fit: contain;
+    image-rendering: pixelated;
+  }
+  .thumb .idx {
+    color: #666; font-size: 10px; margin-top: 2px;
+  }
+  .thumb .row-tag {
+    position: absolute;
+    top: 1px; left: 1px;
+    background: #000a;
+    color: #7af;
+    font-size: 9px;
+    padding: 1px 3px;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  /* Capture-mode: green tint on hover, big order-badge when clicked */
+  body.capture-mode .thumb:hover {
+    border-color: #5f5;
+    box-shadow: 0 0 8px #5f5;
+  }
+  .thumb .order-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: #2a5;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    min-width: 20px; height: 20px;
+    line-height: 20px;
+    padding: 0 5px;
+    border-radius: 50%;
+    border: 2px solid #0a0a0a;
+    box-shadow: 0 0 4px #2a5;
+  }
+  .thumb.in-other-anim {
+    opacity: 0.5;
+    border-color: #666;
+  }
+  .thumb.in-other-anim::after {
+    content: attr(data-anim);
+    position: absolute;
+    bottom: 1px; right: 1px;
+    background: #000a; color: #fea;
+    font-size: 9px; padding: 1px 3px; border-radius: 2px;
+  }
+
+  /* ───────── Animation cards ───────── */
+  .anim-card {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    padding: 12px;
+  }
+  .anim-card.editing {
+    border-color: #5a5; box-shadow: 0 0 8px rgba(90, 255, 90, 0.2);
+  }
+  .anim-card-header {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .anim-card-header input[type=text] {
+    font-weight: bold; font-size: 14px; width: 180px;
+  }
+  .anim-frames-strip {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 8px;
+    background: #080808; border: 1px solid #222;
+    min-height: 74px;
+    border-radius: 3px;
+  }
+  .mini-frame {
+    position: relative;
+    width: 64px; height: 72px;
+    border: 1px solid #555;
+    background: repeating-conic-gradient(#222 0% 25%, #333 0% 50%) 50% / 8px 8px;
+    padding: 2px;
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 9px; color: #777;
+  }
+  .mini-frame img {
+    width: 100%; max-height: 40px; object-fit: contain;
+    image-rendering: pixelated;
+  }
+  .mini-frame .order-num {
+    position: absolute; top: 1px; left: 1px;
+    background: #2a5; color: white; font-weight: bold;
+    font-size: 10px; padding: 1px 4px; border-radius: 2px;
+  }
+  .mini-frame .mini-ctrls {
+    display: flex; gap: 1px; margin-top: auto;
+  }
+  .mini-frame .mini-ctrls button {
+    padding: 1px 4px; font-size: 10px; margin: 0; min-width: 18px;
+  }
+  .empty-slot {
+    border: 1px dashed #444; color: #555;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; min-height: 50px; font-size: 11px;
+  }
+  .anim-meta-row {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;
+    font-size: 11px; color: #aaa; align-items: center;
+  }
+  .anim-meta-row label { display: inline-flex; align-items: center; gap: 4px; }
+  .anim-meta-row input[type=number] { width: 50px; }
+
+  /* ───────── Preview ───────── */
+  #previewCanvas {
+    background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 50% / 20px 20px;
+    border: 1px solid #333;
+    image-rendering: pixelated;
+    display: block;
+  }
+  .preview-controls {
+    display: flex; gap: 8px; align-items: center;
+    margin-top: 8px; flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<h1>Sprite Forge — Curator</h1>
+<p class="note">Build named animations out of the detected sprite frames.</p>
+
+<!-- ═══════════ Help / How-to ═══════════ -->
+<div class="help">
+  <h3>🎯 How to use this tool</h3>
+  <ol>
+    <li><b>Load files</b> — pick a sprite sheet PNG and its analyzer JSON from the pickers below.
+        (Files live at <code>Desktop\sprite_lab\</code>.)</li>
+    <li><b>Click "+ New Animation"</b> — the cursor turns into a crosshair and a green banner appears at the top.</li>
+    <li><b>Click frames in the order you want them.</b> A number badge pops on each clicked frame showing its position.</li>
+    <li><b>Click "Done" in the banner</b> when you've added all the frames you want for that animation.</li>
+    <li>The animation gets its own card below — rename it, tweak FPS/loop, preview, or rearrange frames with ← → buttons.</li>
+    <li><b>Repeat</b> for each animation (punch, walk, idle, whatever).</li>
+    <li><b>Save</b> at the bottom → downloads <code>hermes.json</code> to your Downloads folder.</li>
+  </ol>
+  <p style="margin: 6px 0 0; font-size: 12px; color: #888;">
+    💾 Your work auto-saves to browser storage after every change. You can close the tab and come back —
+    reload the same sheet and it'll offer to restore your animations.
+  </p>
+</div>
+
+<!-- ═══════════ Capture mode banner (shown when capturing) ═══════════ -->
+<div id="captureBanner" class="capture-banner">
+  <b id="captureName">Selecting frames for: ???</b>
+  <span id="captureCount" style="margin-left: 10px; color: #fff;">0 frames</span>
+  <button class="done" id="captureDoneBtn">✓ Done</button>
+  <button class="cancel" id="captureCancelBtn">✕ Cancel</button>
+  <div class="hint">Click frames in the order you want them to play. Click a frame again to remove it. "Done" saves, "Cancel" discards.</div>
+</div>
+
+<!-- ═══════════ 1. Load files ═══════════ -->
+<div class="pane">
+  <h2>1. Load files</h2>
+  <label>sprite sheet (.png) &nbsp;<input id="sheetFile" type="file" accept="image/*"></label>
+  &nbsp;&nbsp;
+  <label>analyzer output (.json) &nbsp;<input id="jsonFile" type="file" accept="application/json"></label>
+  &nbsp;&nbsp;
+  <label>existing hermes.json (optional) &nbsp;<input id="hermesFile" type="file" accept="application/json"></label>
+  <div id="loadStatus" class="status">waiting for sprite sheet + analyzer json...</div>
+</div>
+
+<!-- ═══════════ 2. Frame pool ═══════════ -->
+<div class="pane">
+  <h2>2. Frame pool — <span id="frameCount">0</span> frames</h2>
+  <p class="note">All detected frames. In capture mode, click frames in the order you want them in your animation.</p>
+  <div id="pool" class="thumbs">(load files to see frames)</div>
+</div>
+
+<!-- ═══════════ 3. Animations ═══════════ -->
+<div class="pane">
+  <h2>3. Animations</h2>
+  <button id="newAnimBtn" class="primary big">+ New Animation</button>
+  <button id="seedRowsBtn">Auto-seed from detected rows</button>
+  <button id="clearAllBtn" class="danger small" title="Remove all animations (frames return to pool)">Clear all</button>
+  <div id="anims" style="margin-top: 10px;">(no animations yet — click "+ New Animation")</div>
+</div>
+
+<!-- ═══════════ 4. Preview ═══════════ -->
+<div class="pane">
+  <h2>4. Preview</h2>
+  <canvas id="previewCanvas" width="480" height="320"></canvas>
+  <div class="preview-controls">
+    <span id="previewLabel" style="color:#aaa;">(click ▶ on an animation above)</span>
+    <label>fps <input id="previewFps" type="number" min="1" max="60" value="10" style="width:50px"></label>
+    <button id="playBtn">Play</button>
+    <button id="stopBtn">Stop</button>
+  </div>
+</div>
+
+<!-- ═══════════ 5. Save ═══════════ -->
+<div class="pane">
+  <h2>5. Save</h2>
+  <button id="saveBtn" class="primary big">⬇ Download hermes.json</button>
+  <button id="copyBtn">Copy to clipboard</button>
+  <div id="saveStatus" class="status">unsaved — download to use with the demo game</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'sprite-forge-curator-v1';
+
+  // ── State ──
+  const state = {
+    sheet: null,
+    frames: [],            // [{bounds, row?}, ...]
+    thumbUrls: [],         // data: URL per frame
+    sheetName: '',
+    analyzerMeta: null,    // subset of analyzer JSON for rebuilding hermes
+    animations: [],        // [{id, name, frames: [idx...], fps, loop, frame_data, state_id}]
+    capture: null,         // {id, frames: []} when capturing, else null
+    previewAnimId: null,
+    playing: null,
+  };
+
+  const $ = id => document.getElementById(id);
+  const setStatus = (id, cls, msg) => {
+    const el = $(id); el.className = 'status ' + cls; el.textContent = msg;
+  };
+
+  // ── Persistence ──
+  function save() {
+    if (!state.sheetName) return;
+    const data = {
+      sheetName: state.sheetName,
+      animations: state.animations,
+    };
+    try { localStorage.setItem(STORAGE_KEY + ':' + state.sheetName, JSON.stringify(data)); }
+    catch (e) { /* storage full / blocked */ }
+  }
+
+  function loadSaved() {
+    if (!state.sheetName) return false;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY + ':' + state.sheetName);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (data.animations && Array.isArray(data.animations)) {
+        state.animations = data.animations;
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  // ── File handlers ──
+  $('sheetFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    state.sheetName = f.name;
+    const img = new Image();
+    img.onload = () => { state.sheet = img; tryInit(); };
+    img.onerror = () => setStatus('loadStatus', 'err', 'image load failed');
+    img.src = URL.createObjectURL(f);
+  });
+
+  $('jsonFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      state.frames = (data.frames || []).map(fr => ({ bounds: fr.bounds }));
+      if (data.row_groups) {
+        data.row_groups.forEach((row, ri) => {
+          row.forEach(item => {
+            if (state.frames[item.index]) state.frames[item.index].row = ri;
+          });
+        });
+      }
+      state.analyzerMeta = {
+        current_size: data.current_size,
+        original_size: data.original_size,
+        bg_mode: data.bg_mode,
+        row_groups: data.row_groups,
+      };
+      tryInit();
+    } catch (err) {
+      setStatus('loadStatus', 'err', 'analyzer JSON parse failed: ' + err.message);
+    }
+  });
+
+  $('hermesFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!state.frames.length) {
+        setStatus('loadStatus', 'err', 'load the sheet + analyzer first');
+        return;
+      }
+      importHermes(data);
+      renderAll();
+      setStatus('loadStatus', 'ok',
+        `loaded ${state.animations.length} animations from hermes.json`);
+      save();
+    } catch (err) {
+      setStatus('loadStatus', 'err', 'hermes.json parse failed: ' + err.message);
+    }
+  });
+
+  function importHermes(data) {
+    const key = b => `${b[0]}|${b[1]}|${b[2]}|${b[3]}`;
+    const indexByKey = new Map();
+    state.frames.forEach((f, i) => indexByKey.set(key(f.bounds), i));
+    state.animations = [];
+    for (const [name, anim] of Object.entries(data.animations || {})) {
+      const frameIndices = [];
+      for (const rect of anim.frames || []) {
+        const idx = indexByKey.get(key(rect));
+        if (idx !== undefined) frameIndices.push(idx);
+      }
+      state.animations.push({
+        id: rid(),
+        name,
+        frames: frameIndices,
+        fps: anim.fps ?? 10,
+        loop: anim.loop !== false,
+        frame_data: anim.frame_data || null,
+        state_id: anim.state_id ?? null,
+      });
+    }
+  }
+
+  function tryInit() {
+    if (!state.sheet || !state.frames.length) {
+      setStatus('loadStatus', '',
+        `loaded so far: ${[state.sheet && 'sheet', state.frames.length && 'analyzer'].filter(Boolean).join(', ') || 'neither'}`);
+      return;
+    }
+    $('frameCount').textContent = state.frames.length;
+    renderThumbCache();
+    const restored = loadSaved();
+    if (restored) {
+      setStatus('loadStatus', 'ok',
+        `${state.frames.length} frames loaded. Restored ${state.animations.length} saved animations from your last session.`);
+    } else {
+      setStatus('loadStatus', 'ok',
+        `${state.frames.length} frames loaded. Click "+ New Animation" to start.`);
+    }
+    renderAll();
+  }
+
+  function renderThumbCache() {
+    state.thumbUrls = state.frames.map(f => {
+      const [x, y, w, h] = f.bounds;
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(state.sheet, x, y, w, h, 0, 0, w, h);
+      return c.toDataURL();
+    });
+  }
+
+  // ── Capture mode ──
+  function startCapture() {
+    if (!state.frames.length) {
+      setStatus('loadStatus', 'err', 'load a sheet + analyzer JSON first');
+      return;
+    }
+    const newAnim = {
+      id: rid(),
+      name: 'new_animation',
+      frames: [],
+      fps: 10,
+      loop: true,
+      frame_data: null,
+      state_id: null,
+    };
+    state.capture = newAnim;
+    document.body.classList.add('capture-mode');
+    $('captureBanner').classList.add('active');
+    updateCaptureBanner();
+    renderPool();
+    // Scroll to pool
+    $('pool').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function updateCaptureBanner() {
+    if (!state.capture) return;
+    $('captureName').textContent = `Selecting frames for: "${state.capture.name}"`;
+    $('captureCount').textContent = `${state.capture.frames.length} frame(s) picked`;
+  }
+
+  function finishCapture() {
+    if (!state.capture) return;
+    const anim = state.capture;
+    state.capture = null;
+    document.body.classList.remove('capture-mode');
+    $('captureBanner').classList.remove('active');
+    if (anim.frames.length === 0) {
+      setStatus('loadStatus', 'info', 'cancelled — empty animation discarded');
+    } else {
+      state.animations.push(anim);
+      setStatus('loadStatus', 'ok',
+        `added animation "${anim.name}" with ${anim.frames.length} frame(s). Rename it below if needed.`);
+      save();
+    }
+    renderAll();
+  }
+
+  function cancelCapture() {
+    if (!state.capture) return;
+    state.capture = null;
+    document.body.classList.remove('capture-mode');
+    $('captureBanner').classList.remove('active');
+    setStatus('loadStatus', 'info', 'cancelled');
+    renderAll();
+  }
+
+  $('newAnimBtn').addEventListener('click', startCapture);
+  $('captureDoneBtn').addEventListener('click', finishCapture);
+  $('captureCancelBtn').addEventListener('click', cancelCapture);
+
+  // ── Pool (frame thumbnails) ──
+  function renderPool() {
+    const pool = $('pool');
+    pool.innerHTML = '';
+    if (!state.frames.length) {
+      pool.innerHTML = '(load files to see frames)';
+      return;
+    }
+    // Map: frameIdx → {animName, order} for frames already in a saved anim
+    const inAnim = new Map();
+    for (const a of state.animations) {
+      a.frames.forEach((fi, order) => inAnim.set(fi, { name: a.name, order }));
+    }
+
+    state.frames.forEach((f, i) => {
+      const t = document.createElement('div');
+      t.className = 'thumb';
+      t.dataset.idx = i;
+      const inOther = inAnim.get(i);
+      if (inOther) {
+        t.classList.add('in-other-anim');
+        t.dataset.anim = inOther.name;
+      }
+      const img = document.createElement('img');
+      img.src = state.thumbUrls[i];
+      const label = document.createElement('div');
+      label.className = 'idx';
+      const [x, y, w, h] = f.bounds;
+      label.textContent = `#${i} ${w}×${h}`;
+      if (f.row !== undefined) {
+        const tag = document.createElement('div');
+        tag.className = 'row-tag';
+        tag.textContent = 'r' + f.row;
+        t.appendChild(tag);
+      }
+      t.append(img, label);
+
+      // If we're in capture mode, show the pick order
+      if (state.capture) {
+        const orderPos = state.capture.frames.indexOf(i);
+        if (orderPos >= 0) {
+          const badge = document.createElement('div');
+          badge.className = 'order-badge';
+          badge.textContent = orderPos + 1;
+          t.appendChild(badge);
+        }
+      }
+
+      t.addEventListener('click', () => handlePoolClick(i));
+      pool.appendChild(t);
+    });
+  }
+
+  function handlePoolClick(idx) {
+    if (state.capture) {
+      // Capture mode: toggle frame
+      const cap = state.capture;
+      const pos = cap.frames.indexOf(idx);
+      if (pos >= 0) {
+        cap.frames.splice(pos, 1);
+      } else {
+        cap.frames.push(idx);
+      }
+      updateCaptureBanner();
+      renderPool();
+    }
+    // Outside capture mode: clicks do nothing (use the card controls)
+  }
+
+  // ── Animation cards ──
+  function rid() { return Math.random().toString(36).slice(2, 9); }
+
+  function renderAnims() {
+    const host = $('anims');
+    host.innerHTML = '';
+    if (state.animations.length === 0) {
+      host.innerHTML = '<span style="color:#666">(no animations yet — click "+ New Animation")</span>';
+      return;
+    }
+    state.animations.forEach((anim, ai) => {
+      const card = document.createElement('div');
+      card.className = 'anim-card';
+      card.dataset.id = anim.id;
+
+      // Header
+      const hdr = document.createElement('div');
+      hdr.className = 'anim-card-header';
+      const nameIn = document.createElement('input');
+      nameIn.type = 'text'; nameIn.value = anim.name;
+      nameIn.addEventListener('input', () => {
+        anim.name = nameIn.value.trim() || anim.name;
+        save();
+      });
+      const addMoreBtn = document.createElement('button');
+      addMoreBtn.textContent = '+ add more frames';
+      addMoreBtn.title = 'Enter capture mode to add frames to this animation';
+      addMoreBtn.addEventListener('click', () => extendAnim(anim));
+      const previewBtn = document.createElement('button');
+      previewBtn.className = 'primary';
+      previewBtn.textContent = '▶ preview';
+      previewBtn.addEventListener('click', () => { state.previewAnimId = anim.id; playPreview(); });
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'danger small';
+      deleteBtn.textContent = '✕ delete';
+      deleteBtn.addEventListener('click', () => {
+        if (confirm(`Delete animation "${anim.name}"? (Frames return to the pool.)`)) {
+          state.animations.splice(ai, 1);
+          renderAll(); save();
+        }
+      });
+      hdr.append(nameIn, addMoreBtn, previewBtn, deleteBtn);
+      card.appendChild(hdr);
+
+      // Frame strip
+      const strip = document.createElement('div');
+      strip.className = 'anim-frames-strip';
+      if (anim.frames.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-slot';
+        empty.textContent = '(empty — click "+ add more frames")';
+        strip.appendChild(empty);
+      } else {
+        anim.frames.forEach((frameIdx, fi) => {
+          const mf = document.createElement('div');
+          mf.className = 'mini-frame';
+          const num = document.createElement('div');
+          num.className = 'order-num';
+          num.textContent = (fi + 1);
+          const img = document.createElement('img');
+          img.src = state.thumbUrls[frameIdx];
+          const lbl = document.createElement('div');
+          lbl.textContent = `#${frameIdx}`;
+          const ctrls = document.createElement('div');
+          ctrls.className = 'mini-ctrls';
+          const leftBtn = document.createElement('button');
+          leftBtn.textContent = '←';
+          leftBtn.disabled = fi === 0;
+          leftBtn.title = 'move earlier in animation';
+          leftBtn.addEventListener('click', () => {
+            [anim.frames[fi-1], anim.frames[fi]] = [anim.frames[fi], anim.frames[fi-1]];
+            renderAnims(); save();
+          });
+          const rightBtn = document.createElement('button');
+          rightBtn.textContent = '→';
+          rightBtn.disabled = fi === anim.frames.length - 1;
+          rightBtn.title = 'move later in animation';
+          rightBtn.addEventListener('click', () => {
+            [anim.frames[fi], anim.frames[fi+1]] = [anim.frames[fi+1], anim.frames[fi]];
+            renderAnims(); save();
+          });
+          const remBtn = document.createElement('button');
+          remBtn.textContent = '×';
+          remBtn.title = 'remove from animation';
+          remBtn.addEventListener('click', () => {
+            anim.frames.splice(fi, 1);
+            renderAll(); save();
+          });
+          ctrls.append(leftBtn, rightBtn, remBtn);
+          mf.append(num, img, lbl, ctrls);
+          strip.appendChild(mf);
+        });
+      }
+      card.appendChild(strip);
+
+      // Meta row
+      const meta = document.createElement('div');
+      meta.className = 'anim-meta-row';
+
+      const fpsIn = document.createElement('input');
+      fpsIn.type = 'number'; fpsIn.min = 1; fpsIn.max = 60; fpsIn.value = anim.fps;
+      fpsIn.addEventListener('input', () => {
+        anim.fps = parseInt(fpsIn.value) || 10; save();
+      });
+      const fpsLbl = document.createElement('label'); fpsLbl.append('fps ', fpsIn);
+
+      const loopIn = document.createElement('input');
+      loopIn.type = 'checkbox'; loopIn.checked = anim.loop;
+      loopIn.addEventListener('change', () => { anim.loop = loopIn.checked; save(); });
+      const loopLbl = document.createElement('label'); loopLbl.append(loopIn, ' loop');
+
+      const stateIn = document.createElement('input');
+      stateIn.type = 'number';
+      stateIn.placeholder = 'MUGEN#';
+      stateIn.title = 'Optional MUGEN state number (200=LP, 400=cLP, 600=jLP, etc.)';
+      stateIn.style.width = '80px';
+      stateIn.value = anim.state_id ?? '';
+      stateIn.addEventListener('input', () => {
+        anim.state_id = stateIn.value ? parseInt(stateIn.value) : null; save();
+      });
+      const stateLbl = document.createElement('label'); stateLbl.append('state_id ', stateIn);
+
+      const fdBtn = document.createElement('button');
+      fdBtn.className = 'small';
+      fdBtn.textContent = anim.frame_data ? 'edit timing' : '+ frame timing';
+      fdBtn.title = 'Fighter timing: startup / active / recovery frame counts';
+      fdBtn.addEventListener('click', () => {
+        const su = parseInt(prompt('startup frames (before the hit):', anim.frame_data?.startup ?? 3) ?? '', 10);
+        if (isNaN(su)) return;
+        const ac = parseInt(prompt('active frames (hit is live):', anim.frame_data?.active ?? 3) ?? '', 10);
+        if (isNaN(ac)) return;
+        const rc = parseInt(prompt('recovery frames (locked after):', anim.frame_data?.recovery ?? 3) ?? '', 10);
+        if (isNaN(rc)) return;
+        anim.frame_data = { startup: su, active: ac, recovery: rc };
+        renderAnims(); save();
+      });
+      const fdClearBtn = document.createElement('button');
+      fdClearBtn.className = 'small';
+      fdClearBtn.textContent = 'clear timing';
+      fdClearBtn.style.display = anim.frame_data ? '' : 'none';
+      fdClearBtn.addEventListener('click', () => { anim.frame_data = null; renderAnims(); save(); });
+
+      const fdDisplay = document.createElement('span');
+      fdDisplay.style.color = '#888';
+      if (anim.frame_data) {
+        const fd = anim.frame_data;
+        fdDisplay.textContent = `(su:${fd.startup} act:${fd.active} rec:${fd.recovery})`;
+      }
+
+      meta.append(fpsLbl, loopLbl, stateLbl, fdBtn, fdClearBtn, fdDisplay);
+      card.appendChild(meta);
+      host.appendChild(card);
+    });
+  }
+
+  function extendAnim(anim) {
+    // Enter capture mode, but seed capture.frames with current anim
+    // and remove the anim from the list (to avoid the in-other-anim styling).
+    // We put it back when Done is hit.
+    const idx = state.animations.indexOf(anim);
+    if (idx >= 0) state.animations.splice(idx, 1);
+    state.capture = {
+      id: anim.id,
+      name: anim.name,
+      frames: [...anim.frames],
+      fps: anim.fps,
+      loop: anim.loop,
+      frame_data: anim.frame_data,
+      state_id: anim.state_id,
+      _extending: true,
+    };
+    document.body.classList.add('capture-mode');
+    $('captureBanner').classList.add('active');
+    updateCaptureBanner();
+    renderAll();
+    $('pool').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Auto-seed from rows ──
+  $('seedRowsBtn').addEventListener('click', () => {
+    if (!state.analyzerMeta?.row_groups) {
+      setStatus('loadStatus', 'err', 'no row data in analyzer JSON');
+      return;
+    }
+    if (state.animations.length > 0) {
+      if (!confirm('This replaces your current animations. Continue?')) return;
+    }
+    state.animations = [];
+    state.analyzerMeta.row_groups.forEach((row, ri) => {
+      state.animations.push({
+        id: rid(),
+        name: 'row_' + ri,
+        frames: row.map(item => item.index),
+        fps: 10,
+        loop: true,
+        frame_data: null,
+        state_id: null,
+      });
+    });
+    renderAll(); save();
+    setStatus('loadStatus', 'ok',
+      `seeded ${state.animations.length} animations — rename them, trim frames, or add new ones`);
+  });
+
+  $('clearAllBtn').addEventListener('click', () => {
+    if (!state.animations.length) return;
+    if (confirm('Remove all animations? Frames return to the pool.')) {
+      state.animations = [];
+      renderAll(); save();
+    }
+  });
+
+  // ── Preview ──
+  function playPreview() {
+    if (state.playing) { clearInterval(state.playing); state.playing = null; }
+    const anim = state.animations.find(a => a.id === state.previewAnimId);
+    if (!anim || anim.frames.length === 0) {
+      $('previewLabel').textContent = '(no frames to play)';
+      return;
+    }
+    $('previewLabel').textContent = `${anim.name} (${anim.frames.length} frames)`;
+    const canvas = $('previewCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const fps = parseInt($('previewFps').value) || anim.fps || 10;
+    const msPerFrame = 1000 / fps;
+    let step = 0;
+    state.playing = setInterval(() => {
+      const frameIdx = anim.frames[step % anim.frames.length];
+      const [sx, sy, sw, sh] = state.frames[frameIdx].bounds;
+      const target = 260;
+      const scale = Math.max(1, Math.min(Math.floor(target/sw), Math.floor(target/sh)));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const dx = Math.floor((canvas.width - sw*scale) / 2);
+      const dy = Math.floor((canvas.height - sh*scale) / 2);
+      ctx.drawImage(state.sheet, sx, sy, sw, sh, dx, dy, sw*scale, sh*scale);
+      ctx.fillStyle = '#7af';
+      ctx.font = '14px monospace';
+      ctx.fillText(`${anim.name} ${(step % anim.frames.length) + 1}/${anim.frames.length}`, 12, 22);
+      step++;
+      if (anim.loop === false && step >= anim.frames.length) {
+        clearInterval(state.playing); state.playing = null;
+      }
+    }, msPerFrame);
+  }
+  $('playBtn').addEventListener('click', playPreview);
+  $('stopBtn').addEventListener('click', () => {
+    if (state.playing) clearInterval(state.playing);
+    state.playing = null;
+  });
+
+  // ── Save / download ──
+  function buildHermesJson() {
+    const doc = {
+      version: 1,
+      sheet: state.sheetName,
+      size: state.analyzerMeta?.current_size || [state.sheet.naturalWidth, state.sheet.naturalHeight],
+      bg_mode: state.analyzerMeta?.bg_mode || 'transparent',
+      animations: {},
+      meta: {
+        source: 'curator',
+        n_animations: state.animations.length,
+      },
+    };
+    for (const anim of state.animations) {
+      if (!anim.frames.length) continue;
+      const entry = {
+        frames: anim.frames.map(i => state.frames[i].bounds),
+        fps: anim.fps,
+        loop: anim.loop,
+      };
+      if (anim.frame_data) entry.frame_data = anim.frame_data;
+      if (anim.state_id !== null && anim.state_id !== undefined) entry.state_id = anim.state_id;
+      doc.animations[anim.name] = entry;
+    }
+    return doc;
+  }
+
+  $('saveBtn').addEventListener('click', () => {
+    if (!state.animations.length) {
+      setStatus('saveStatus', 'err', 'no animations to save');
+      return;
+    }
+    const doc = buildHermesJson();
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const base = (state.sheetName || 'sheet').replace(/\.[^.]+$/, '');
+    a.download = base + '_hermes.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    setStatus('saveStatus', 'ok',
+      `downloaded ${a.download} — ${Object.keys(doc.animations).length} animations saved`);
+  });
+
+  $('copyBtn').addEventListener('click', async () => {
+    if (!state.animations.length) {
+      setStatus('saveStatus', 'err', 'no animations'); return;
+    }
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(buildHermesJson(), null, 2));
+      setStatus('saveStatus', 'ok', 'copied JSON to clipboard');
+    } catch (err) {
+      setStatus('saveStatus', 'err', 'clipboard copy failed: ' + err);
+    }
+  });
+
+  // ── Render-all convenience ──
+  function renderAll() {
+    renderPool();
+    renderAnims();
+    save();
+  }
+
+  // ── Keyboard: Esc cancels capture ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.capture) cancelCapture();
+  });
+
+})();
+</script>
+</body>
+</html>
