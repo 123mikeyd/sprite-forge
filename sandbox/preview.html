@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Forge — Preview</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #0a0a0a;
+    color: #d8d8d8;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 { color: #7af; margin: 0 0 10px 0; font-size: 22px; }
+  p.note { color: #888; font-size: 13px; margin: 6px 0; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .pane {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 14px;
+    min-width: 380px;
+  }
+  h2 { color: #7af; margin: 14px 0 8px; font-size: 15px;
+       border-bottom: 1px solid #333; padding-bottom: 4px; }
+  label { display: block; margin: 8px 0 4px; color: #aaa; font-size: 13px; }
+  input[type=file], input[type=number], select, button {
+    background: #1a1a1a; color: #d8d8d8;
+    border: 1px solid #444;
+    padding: 6px 10px;
+    font-family: inherit; font-size: 13px;
+  }
+  button { cursor: pointer; background: #223; color: #7af; }
+  button:hover { background: #334; color: #fff; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: #245; color: #afd; border-color: #478; }
+  .status { font-size: 12px; color: #888; margin-top: 6px; min-height: 16px; }
+  .status.ok { color: #8f8; }
+  .status.err { color: #f88; }
+  canvas { display: block; background: #181818; border: 1px solid #333; }
+  #sheetCanvas { width: 100%; max-width: 800px; height: auto; image-rendering: pixelated; }
+  #frameCanvas { background: repeating-conic-gradient(#222 0% 25%, #333 0% 50%) 50% / 20px 20px;
+                 image-rendering: pixelated; }
+  .frame-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 4px;
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid #333;
+    padding: 6px;
+    background: #0a0a0a;
+  }
+  .frame-thumb {
+    border: 1px solid #333;
+    background: repeating-conic-gradient(#222 0% 25%, #333 0% 50%) 50% / 8px 8px;
+    cursor: pointer;
+    padding: 2px;
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+    image-rendering: pixelated;
+  }
+  .frame-thumb.selected { border-color: #7af; box-shadow: 0 0 4px #7af; }
+  .frame-thumb img { display: block; width: 100%; max-height: 64px; object-fit: contain;
+                     image-rendering: pixelated; }
+  .meta { font-size: 11px; color: #666; line-height: 1.4; margin-top: 6px; }
+  .anim-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .anim-pill {
+    background: #223; color: #7af;
+    padding: 4px 10px; font-size: 12px;
+    border: 1px solid #345; border-radius: 3px;
+    cursor: pointer;
+  }
+  .anim-pill.active { background: #356; color: #fff; }
+  .anim-pill:hover { background: #334; }
+</style>
+</head>
+<body>
+
+<h1>Sprite Forge — Preview</h1>
+<p class="note">Drop a sprite sheet PNG and its analyzer JSON to see
+every detected frame in a grid, flipbook-animate any subset, and
+spot-check detection quality.</p>
+
+<div class="row">
+
+  <!-- LEFT: load + overview -->
+  <div class="pane" style="flex: 1;">
+    <h2>1. Load files</h2>
+    <label>sprite sheet (.png)</label>
+    <input id="sheetFile" type="file" accept="image/png,image/*">
+    <label>analyzer output (.json)</label>
+    <input id="jsonFile" type="file" accept="application/json,.json">
+    <div id="loadStatus" class="status">waiting for both files...</div>
+
+    <h2>2. Sheet overview</h2>
+    <canvas id="sheetCanvas" width="500" height="500"></canvas>
+    <div id="sheetMeta" class="meta"></div>
+  </div>
+
+  <!-- RIGHT: frames + animation -->
+  <div class="pane" style="flex: 1;">
+    <h2>3. Frame grid</h2>
+    <p class="note">Click a thumbnail to preview. Shift-click multiple
+    frames, then hit "Animate selection" below.</p>
+    <div id="frameGrid" class="frame-grid">
+      <span style="color:#555">load files to see frames</span>
+    </div>
+
+    <h2>4. Flipbook preview</h2>
+    <canvas id="frameCanvas" width="200" height="200"></canvas>
+    <div class="meta">
+      <label>fps
+        <input id="fpsInput" type="number" min="1" max="60" value="10" style="width: 60px;">
+      </label>
+      <button id="playBtn" class="primary" disabled>Play selection</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <button id="selectAllBtn">Select all</button>
+      <button id="clearBtn">Clear selection</button>
+    </div>
+    <div id="animStatus" class="status">nothing selected</div>
+
+    <h2>5. Quick animation presets</h2>
+    <p class="note">Select a contiguous row as an animation:</p>
+    <div id="rowPresets" class="anim-list"></div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const state = {
+    sheet: null,       // HTMLImageElement
+    json: null,        // analyzer output
+    frames: [],        // parsed frame list
+    selected: new Set(),
+    playing: null,     // interval handle
+  };
+
+  const $ = id => document.getElementById(id);
+  const setStatus = (id, cls, msg) => {
+    const el = $(id);
+    el.className = 'status ' + cls;
+    el.textContent = msg;
+  };
+
+  // --- File loaders -----------------------------------------------
+
+  $('sheetFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const img = new Image();
+    img.onload = () => {
+      state.sheet = img;
+      drawSheet();
+      tryFinalize();
+    };
+    img.onerror = () => setStatus('loadStatus', 'err', 'failed to load image');
+    img.src = URL.createObjectURL(f);
+  });
+
+  $('jsonFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const text = await f.text();
+      state.json = JSON.parse(text);
+      tryFinalize();
+    } catch (err) {
+      setStatus('loadStatus', 'err', 'JSON parse failed: ' + err.message);
+    }
+  });
+
+  function tryFinalize() {
+    if (!state.sheet || !state.json) {
+      const have = [state.sheet ? 'sheet' : null, state.json ? 'JSON' : null].filter(Boolean);
+      setStatus('loadStatus', '', `have: ${have.join(', ') || 'neither'}. Load both.`);
+      return;
+    }
+    state.frames = state.json.frames || [];
+    setStatus('loadStatus', 'ok',
+      `${state.frames.length} frames loaded from ${state.json.rows || '?'} rows.`);
+    renderSheetMeta();
+    renderFrameGrid();
+    renderRowPresets();
+    $('playBtn').disabled = false;
+  }
+
+  // --- Sheet overview ----------------------------------------------
+
+  function drawSheet() {
+    const canvas = $('sheetCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = state.sheet.naturalWidth;
+    canvas.height = state.sheet.naturalHeight;
+    // Checkered transparent bg
+    ctx.fillStyle = '#181818';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(state.sheet, 0, 0);
+    if (state.json) drawFrameOutlines();
+  }
+
+  function drawFrameOutlines() {
+    if (!state.sheet || !state.json) return;
+    const canvas = $('sheetCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = 'rgba(122, 170, 255, 0.6)';
+    ctx.lineWidth = 1;
+    for (const f of state.frames) {
+      const [x, y, w, h] = f.bounds;
+      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    }
+  }
+
+  function renderSheetMeta() {
+    const m = state.json;
+    $('sheetMeta').innerHTML =
+      `<div>size: ${m.current_size ? m.current_size.join('×') : '?'}px</div>` +
+      `<div>bg mode: ${m.bg_mode || '?'}</div>` +
+      `<div>rows: ${m.rows || '?'}  frames: ${m.total_frames || 0}</div>` +
+      (m.summary ? `<div>quality: ${JSON.stringify(m.summary)}</div>` : '') +
+      (m.duplicates && m.duplicates.length ? `<div>possible dupes: ${m.duplicates.length}</div>` : '');
+  }
+
+  // --- Frame grid (clickable thumbnails) ----------------------------
+
+  function renderFrameGrid() {
+    const grid = $('frameGrid');
+    grid.innerHTML = '';
+    state.frames.forEach((frame, i) => {
+      const [x, y, w, h] = frame.bounds;
+      const thumb = document.createElement('div');
+      thumb.className = 'frame-thumb';
+      thumb.dataset.idx = i;
+      // Offscreen-canvas crop for this frame
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const cx = c.getContext('2d');
+      cx.drawImage(state.sheet, x, y, w, h, 0, 0, w, h);
+      const img = new Image();
+      img.src = c.toDataURL();
+      const label = document.createElement('div');
+      label.textContent = `#${i} ${w}×${h}`;
+      thumb.appendChild(img);
+      thumb.appendChild(label);
+      thumb.addEventListener('click', (e) => {
+        if (!e.shiftKey) state.selected.clear();
+        if (state.selected.has(i)) state.selected.delete(i);
+        else state.selected.add(i);
+        updateSelection();
+      });
+      grid.appendChild(thumb);
+    });
+  }
+
+  function updateSelection() {
+    document.querySelectorAll('.frame-thumb').forEach(t => {
+      const i = parseInt(t.dataset.idx, 10);
+      t.classList.toggle('selected', state.selected.has(i));
+    });
+    const n = state.selected.size;
+    setStatus('animStatus', n ? 'ok' : '',
+      n ? `${n} frame(s) selected. Ready to animate.` : 'nothing selected');
+  }
+
+  $('selectAllBtn').addEventListener('click', () => {
+    state.selected = new Set(state.frames.map((_, i) => i));
+    updateSelection();
+  });
+  $('clearBtn').addEventListener('click', () => {
+    state.selected.clear();
+    updateSelection();
+  });
+
+  // --- Flipbook animation -----------------------------------------
+
+  $('playBtn').addEventListener('click', () => {
+    if (state.playing) clearInterval(state.playing);
+    const indices = Array.from(state.selected).sort((a, b) => a - b);
+    if (indices.length === 0) {
+      setStatus('animStatus', 'err', 'select frames first');
+      return;
+    }
+    const fps = Math.max(1, parseInt($('fpsInput').value, 10) || 10);
+    const msPerFrame = 1000 / fps;
+    let step = 0;
+    const canvas = $('frameCanvas');
+    const ctx = canvas.getContext('2d');
+    // Size the frame canvas to the largest selected frame
+    let maxW = 1, maxH = 1;
+    for (const i of indices) {
+      const [, , w, h] = state.frames[i].bounds;
+      maxW = Math.max(maxW, w);
+      maxH = Math.max(maxH, h);
+    }
+    const target = 200;
+    const scale = Math.max(1, Math.min(Math.floor(target / maxW), Math.floor(target / maxH)));
+    canvas.width = maxW * scale;
+    canvas.height = maxH * scale;
+    ctx.imageSmoothingEnabled = false;
+    state.playing = setInterval(() => {
+      const frame = state.frames[indices[step % indices.length]];
+      const [x, y, w, h] = frame.bounds;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Center the frame
+      const dx = Math.floor((canvas.width - w * scale) / 2);
+      const dy = Math.floor((canvas.height - h * scale) / 2);
+      ctx.drawImage(state.sheet, x, y, w, h, dx, dy, w * scale, h * scale);
+      step++;
+    }, msPerFrame);
+    $('stopBtn').disabled = false;
+    setStatus('animStatus', 'ok',
+      `playing ${indices.length} frames @ ${fps}fps (scale ${scale}x)`);
+  });
+
+  $('stopBtn').addEventListener('click', () => {
+    if (state.playing) clearInterval(state.playing);
+    state.playing = null;
+    $('stopBtn').disabled = true;
+    setStatus('animStatus', '', 'stopped');
+  });
+
+  // --- Row presets -------------------------------------------------
+
+  function renderRowPresets() {
+    const host = $('rowPresets');
+    host.innerHTML = '';
+    const rows = state.json.row_groups || [];
+    rows.forEach((row, i) => {
+      const pill = document.createElement('div');
+      pill.className = 'anim-pill';
+      pill.textContent = `row ${i} (${row.length} frames)`;
+      pill.addEventListener('click', () => {
+        state.selected = new Set(row.map(f => f.index));
+        updateSelection();
+      });
+      host.appendChild(pill);
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

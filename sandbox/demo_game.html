@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Forge — demo consumer</title>
+<style>
+  body { background: #0a0a0a; color: #d8d8d8; font-family: 'Courier New', Courier, monospace;
+         margin: 0; padding: 20px; }
+  h1 { color: #7af; margin: 0 0 10px; font-size: 20px; }
+  p.note { color: #888; font-size: 13px; margin: 6px 0 14px; }
+  #stage {
+    background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 50% / 24px 24px;
+    border: 1px solid #333;
+    image-rendering: pixelated;
+    display: block;
+  }
+  .controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    background: #223; color: #7af; border: 1px solid #445;
+    padding: 8px 14px; font-family: inherit; font-size: 13px;
+    cursor: pointer;
+  }
+  button.active { background: #356; color: #fff; }
+  button:hover { background: #334; color: #fff; }
+  .hint { color: #666; font-size: 12px; margin-top: 10px;
+          padding: 10px; background: #111; border-left: 3px solid #7af; }
+  code { background: #222; padding: 2px 6px; color: #fea; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<h1>Sprite Forge — tiny demo game</h1>
+<p class="note">Loads a <code>hermes.json</code> sheet descriptor and
+plays each animation. This is the consumer contract — any Hermes
+Agent-generated 2D game just needs these ~60 lines of JavaScript to
+load sprites produced by Sprite Forge.</p>
+
+<canvas id="stage" width="480" height="360"></canvas>
+
+<div class="controls" id="animBtns"></div>
+
+<div class="hint">
+  The JSON used here is
+  <code>test_sprites/cat_fighter_hermes.json</code>. It was produced
+  by running:<br>
+  <code>python3 src/analyzer.py test_sprites/cat_fighter.png -o test_sprites/cat_fighter_frames.json</code><br>
+  <code>python3 src/assembler.py from-analyzer --analyzer-json ... --by-row --row-names idle walk run punch kick stand</code>
+</div>
+
+<script>
+/**
+ * Sprite Forge demo consumer.
+ * This is the whole runtime for drawing a Sprite Forge animation.
+ * Hermes Agent can copy/paste this into any 2D game it generates.
+ */
+
+const JSON_URL = './test_sprites/cat_fighter_hermes.json';
+
+async function main() {
+  const descriptor = await (await fetch(JSON_URL)).json();
+  const sheetImg = new Image();
+  const sheetUrl = './test_sprites/' + descriptor.sheet;
+  await new Promise((res, rej) => {
+    sheetImg.onload = res; sheetImg.onerror = () => rej('failed: ' + sheetUrl);
+    sheetImg.src = sheetUrl;
+  });
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Runtime state: current animation + frame index + tick accumulator
+  const state = {
+    anim: Object.keys(descriptor.animations)[0],
+    idx: 0,
+    acc: 0,
+    lastTs: performance.now(),
+  };
+
+  // Buttons for each animation
+  const host = document.getElementById('animBtns');
+  for (const name of Object.keys(descriptor.animations)) {
+    const btn = document.createElement('button');
+    btn.textContent = name + ` (${descriptor.animations[name].frames.length})`;
+    btn.dataset.name = name;
+    btn.addEventListener('click', () => {
+      state.anim = name; state.idx = 0; state.acc = 0;
+      document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    host.appendChild(btn);
+  }
+  host.firstChild.classList.add('active');
+
+  // Draw loop
+  const SCALE = 4;
+  function frame(ts) {
+    const dt = ts - state.lastTs;
+    state.lastTs = ts;
+    const anim = descriptor.animations[state.anim];
+    if (anim && anim.frames.length) {
+      state.acc += dt;
+      const msPerFrame = 1000 / (anim.fps || 10);
+      while (state.acc >= msPerFrame) {
+        state.acc -= msPerFrame;
+        state.idx++;
+        if (state.idx >= anim.frames.length) {
+          state.idx = anim.loop === false ? anim.frames.length - 1 : 0;
+        }
+      }
+      const [sx, sy, sw, sh] = anim.frames[state.idx];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const dx = Math.floor((canvas.width  - sw * SCALE) / 2);
+      const dy = Math.floor((canvas.height - sh * SCALE) / 2);
+      ctx.drawImage(sheetImg, sx, sy, sw, sh, dx, dy, sw * SCALE, sh * SCALE);
+
+      // HUD: animation name + frame counter
+      ctx.fillStyle = '#7af';
+      ctx.font = '14px monospace';
+      ctx.fillText(`${state.anim}  ${state.idx + 1}/${anim.frames.length}`, 12, 22);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+main().catch(e => {
+  document.body.insertAdjacentHTML('beforeend',
+    `<div style="color:#f88;padding:12px;">load failed: ${e}</div>`);
+});
+</script>
+</body>
+</html>
