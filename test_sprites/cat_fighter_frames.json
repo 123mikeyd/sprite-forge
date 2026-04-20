@@ -1,0 +1,1853 @@
+{
+  "image_path": "test_sprites/cat_fighter.png",
+  "original_size": [
+    500,
+    500
+  ],
+  "current_size": [
+    500,
+    500
+  ],
+  "bg_mode": "transparent",
+  "bg_color": [
+    0,
+    0,
+    0
+  ],
+  "compression": 1.0,
+  "total_frames": 61,
+  "rows": 6,
+  "frames": [
+    {
+      "bounds": [
+        9,
+        5,
+        28,
+        40
+      ],
+      "dimensions": {
+        "width": 28,
+        "height": 40
+      },
+      "aspect_ratio": 0.7,
+      "unique_colors": 18,
+      "pixel_density": 0.282,
+      "edge_sharpness": 0.672,
+      "color_variance": 119.6,
+      "quality": "good",
+      "index": 0
+    },
+    {
+      "bounds": [
+        59,
+        5,
+        26,
+        40
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 40
+      },
+      "aspect_ratio": 0.65,
+      "unique_colors": 15,
+      "pixel_density": 0.3,
+      "edge_sharpness": 0.775,
+      "color_variance": 120.0,
+      "quality": "good",
+      "index": 1
+    },
+    {
+      "bounds": [
+        108,
+        5,
+        27,
+        40
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 40
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 11,
+      "pixel_density": 0.294,
+      "edge_sharpness": 0.736,
+      "color_variance": 119.9,
+      "quality": "good",
+      "index": 2
+    },
+    {
+      "bounds": [
+        160,
+        5,
+        27,
+        40
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 40
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 14,
+      "pixel_density": 0.299,
+      "edge_sharpness": 0.711,
+      "color_variance": 118.6,
+      "quality": "good",
+      "index": 3
+    },
+    {
+      "bounds": [
+        209,
+        5,
+        28,
+        40
+      ],
+      "dimensions": {
+        "width": 28,
+        "height": 40
+      },
+      "aspect_ratio": 0.7,
+      "unique_colors": 18,
+      "pixel_density": 0.279,
+      "edge_sharpness": 0.659,
+      "color_variance": 118.0,
+      "quality": "good",
+      "index": 4
+    },
+    {
+      "bounds": [
+        259,
+        5,
+        27,
+        40
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 40
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 11,
+      "pixel_density": 0.282,
+      "edge_sharpness": 0.667,
+      "color_variance": 119.4,
+      "quality": "good",
+      "index": 5
+    },
+    {
+      "bounds": [
+        309,
+        5,
+        25,
+        40
+      ],
+      "dimensions": {
+        "width": 25,
+        "height": 40
+      },
+      "aspect_ratio": 0.62,
+      "unique_colors": 11,
+      "pixel_density": 0.294,
+      "edge_sharpness": 0.721,
+      "color_variance": 119.3,
+      "quality": "good",
+      "index": 6
+    },
+    {
+      "bounds": [
+        359,
+        5,
+        26,
+        40
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 40
+      },
+      "aspect_ratio": 0.65,
+      "unique_colors": 11,
+      "pixel_density": 0.294,
+      "edge_sharpness": 0.693,
+      "color_variance": 119.2,
+      "quality": "good",
+      "index": 7
+    },
+    {
+      "bounds": [
+        407,
+        5,
+        33,
+        40
+      ],
+      "dimensions": {
+        "width": 33,
+        "height": 40
+      },
+      "aspect_ratio": 0.82,
+      "unique_colors": 12,
+      "pixel_density": 0.27,
+      "edge_sharpness": 0.713,
+      "color_variance": 115.4,
+      "quality": "good",
+      "index": 8
+    },
+    {
+      "bounds": [
+        459,
+        5,
+        31,
+        40
+      ],
+      "dimensions": {
+        "width": 31,
+        "height": 40
+      },
+      "aspect_ratio": 0.78,
+      "unique_colors": 12,
+      "pixel_density": 0.274,
+      "edge_sharpness": 0.721,
+      "color_variance": 115.0,
+      "quality": "good",
+      "index": 9
+    },
+    {
+      "bounds": [
+        9,
+        56,
+        26,
+        39
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 39
+      },
+      "aspect_ratio": 0.67,
+      "unique_colors": 16,
+      "pixel_density": 0.306,
+      "edge_sharpness": 0.702,
+      "color_variance": 116.4,
+      "quality": "good",
+      "index": 10
+    },
+    {
+      "bounds": [
+        59,
+        56,
+        26,
+        39
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 39
+      },
+      "aspect_ratio": 0.67,
+      "unique_colors": 13,
+      "pixel_density": 0.298,
+      "edge_sharpness": 0.683,
+      "color_variance": 116.2,
+      "quality": "good",
+      "index": 11
+    },
+    {
+      "bounds": [
+        109,
+        56,
+        26,
+        39
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 39
+      },
+      "aspect_ratio": 0.67,
+      "unique_colors": 12,
+      "pixel_density": 0.298,
+      "edge_sharpness": 0.692,
+      "color_variance": 116.6,
+      "quality": "good",
+      "index": 12
+    },
+    {
+      "bounds": [
+        159,
+        56,
+        27,
+        39
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 39
+      },
+      "aspect_ratio": 0.69,
+      "unique_colors": 16,
+      "pixel_density": 0.286,
+      "edge_sharpness": 0.659,
+      "color_variance": 116.6,
+      "quality": "good",
+      "index": 13
+    },
+    {
+      "bounds": [
+        209,
+        56,
+        46,
+        39
+      ],
+      "dimensions": {
+        "width": 46,
+        "height": 39
+      },
+      "aspect_ratio": 1.18,
+      "unique_colors": 11,
+      "pixel_density": 0.287,
+      "edge_sharpness": 0.604,
+      "color_variance": 108.9,
+      "quality": "good",
+      "index": 14
+    },
+    {
+      "bounds": [
+        260,
+        56,
+        45,
+        39
+      ],
+      "dimensions": {
+        "width": 45,
+        "height": 39
+      },
+      "aspect_ratio": 1.15,
+      "unique_colors": 11,
+      "pixel_density": 0.271,
+      "edge_sharpness": 0.534,
+      "color_variance": 110.0,
+      "quality": "good",
+      "index": 15
+    },
+    {
+      "bounds": [
+        309,
+        56,
+        25,
+        39
+      ],
+      "dimensions": {
+        "width": 25,
+        "height": 39
+      },
+      "aspect_ratio": 0.64,
+      "unique_colors": 12,
+      "pixel_density": 0.318,
+      "edge_sharpness": 0.715,
+      "color_variance": 118.2,
+      "quality": "good",
+      "index": 16
+    },
+    {
+      "bounds": [
+        359,
+        56,
+        25,
+        39
+      ],
+      "dimensions": {
+        "width": 25,
+        "height": 39
+      },
+      "aspect_ratio": 0.64,
+      "unique_colors": 12,
+      "pixel_density": 0.319,
+      "edge_sharpness": 0.715,
+      "color_variance": 117.8,
+      "quality": "good",
+      "index": 17
+    },
+    {
+      "bounds": [
+        407,
+        56,
+        44,
+        39
+      ],
+      "dimensions": {
+        "width": 44,
+        "height": 39
+      },
+      "aspect_ratio": 1.13,
+      "unique_colors": 11,
+      "pixel_density": 0.222,
+      "edge_sharpness": 0.559,
+      "color_variance": 114.7,
+      "quality": "good",
+      "index": 18
+    },
+    {
+      "bounds": [
+        458,
+        56,
+        34,
+        39
+      ],
+      "dimensions": {
+        "width": 34,
+        "height": 39
+      },
+      "aspect_ratio": 0.87,
+      "unique_colors": 11,
+      "pixel_density": 0.275,
+      "edge_sharpness": 0.662,
+      "color_variance": 115.4,
+      "quality": "good",
+      "index": 19
+    },
+    {
+      "bounds": [
+        483,
+        56,
+        17,
+        39
+      ],
+      "dimensions": {
+        "width": 17,
+        "height": 39
+      },
+      "aspect_ratio": 0.44,
+      "unique_colors": 4,
+      "pixel_density": 0.081,
+      "edge_sharpness": 0.337,
+      "color_variance": 95.5,
+      "quality": "sparse",
+      "index": 20
+    },
+    {
+      "bounds": [
+        9,
+        104,
+        28,
+        41
+      ],
+      "dimensions": {
+        "width": 28,
+        "height": 41
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 13,
+      "pixel_density": 0.271,
+      "edge_sharpness": 0.648,
+      "color_variance": 119.6,
+      "quality": "good",
+      "index": 21
+    },
+    {
+      "bounds": [
+        59,
+        104,
+        28,
+        41
+      ],
+      "dimensions": {
+        "width": 28,
+        "height": 41
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 18,
+      "pixel_density": 0.283,
+      "edge_sharpness": 0.663,
+      "color_variance": 119.5,
+      "quality": "good",
+      "index": 22
+    },
+    {
+      "bounds": [
+        109,
+        104,
+        26,
+        41
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 41
+      },
+      "aspect_ratio": 0.63,
+      "unique_colors": 9,
+      "pixel_density": 0.265,
+      "edge_sharpness": 0.529,
+      "color_variance": 116.5,
+      "quality": "good",
+      "index": 23
+    },
+    {
+      "bounds": [
+        159,
+        104,
+        30,
+        41
+      ],
+      "dimensions": {
+        "width": 30,
+        "height": 41
+      },
+      "aspect_ratio": 0.73,
+      "unique_colors": 9,
+      "pixel_density": 0.299,
+      "edge_sharpness": 0.55,
+      "color_variance": 111.9,
+      "quality": "good",
+      "index": 24
+    },
+    {
+      "bounds": [
+        210,
+        104,
+        28,
+        41
+      ],
+      "dimensions": {
+        "width": 28,
+        "height": 41
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 8,
+      "pixel_density": 0.311,
+      "edge_sharpness": 0.542,
+      "color_variance": 109.2,
+      "quality": "good",
+      "index": 25
+    },
+    {
+      "bounds": [
+        260,
+        104,
+        28,
+        41
+      ],
+      "dimensions": {
+        "width": 28,
+        "height": 41
+      },
+      "aspect_ratio": 0.68,
+      "unique_colors": 8,
+      "pixel_density": 0.32,
+      "edge_sharpness": 0.5,
+      "color_variance": 107.6,
+      "quality": "good",
+      "index": 26
+    },
+    {
+      "bounds": [
+        312,
+        104,
+        26,
+        41
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 41
+      },
+      "aspect_ratio": 0.63,
+      "unique_colors": 7,
+      "pixel_density": 0.325,
+      "edge_sharpness": 0.613,
+      "color_variance": 110.6,
+      "quality": "good",
+      "index": 27
+    },
+    {
+      "bounds": [
+        359,
+        104,
+        30,
+        41
+      ],
+      "dimensions": {
+        "width": 30,
+        "height": 41
+      },
+      "aspect_ratio": 0.73,
+      "unique_colors": 8,
+      "pixel_density": 0.285,
+      "edge_sharpness": 0.577,
+      "color_variance": 114.1,
+      "quality": "good",
+      "index": 28
+    },
+    {
+      "bounds": [
+        412,
+        104,
+        26,
+        41
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 41
+      },
+      "aspect_ratio": 0.63,
+      "unique_colors": 8,
+      "pixel_density": 0.277,
+      "edge_sharpness": 0.586,
+      "color_variance": 116.6,
+      "quality": "good",
+      "index": 29
+    },
+    {
+      "bounds": [
+        459,
+        104,
+        27,
+        41
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 41
+      },
+      "aspect_ratio": 0.66,
+      "unique_colors": 12,
+      "pixel_density": 0.302,
+      "edge_sharpness": 0.756,
+      "color_variance": 118.4,
+      "quality": "good",
+      "index": 30
+    },
+    {
+      "bounds": [
+        11,
+        154,
+        25,
+        42
+      ],
+      "dimensions": {
+        "width": 25,
+        "height": 42
+      },
+      "aspect_ratio": 0.6,
+      "unique_colors": 12,
+      "pixel_density": 0.306,
+      "edge_sharpness": 0.785,
+      "color_variance": 118.2,
+      "quality": "good",
+      "index": 31
+    },
+    {
+      "bounds": [
+        51,
+        154,
+        39,
+        42
+      ],
+      "dimensions": {
+        "width": 39,
+        "height": 42
+      },
+      "aspect_ratio": 0.93,
+      "unique_colors": 36,
+      "pixel_density": 0.197,
+      "edge_sharpness": 0.465,
+      "color_variance": 118.9,
+      "quality": "good",
+      "index": 32
+    },
+    {
+      "bounds": [
+        96,
+        154,
+        43,
+        42
+      ],
+      "dimensions": {
+        "width": 43,
+        "height": 42
+      },
+      "aspect_ratio": 1.02,
+      "unique_colors": 12,
+      "pixel_density": 0.185,
+      "edge_sharpness": 0.512,
+      "color_variance": 117.2,
+      "quality": "good",
+      "index": 33
+    },
+    {
+      "bounds": [
+        150,
+        154,
+        39,
+        42
+      ],
+      "dimensions": {
+        "width": 39,
+        "height": 42
+      },
+      "aspect_ratio": 0.93,
+      "unique_colors": 11,
+      "pixel_density": 0.194,
+      "edge_sharpness": 0.482,
+      "color_variance": 119.9,
+      "quality": "good",
+      "index": 34
+    },
+    {
+      "bounds": [
+        200,
+        154,
+        39,
+        42
+      ],
+      "dimensions": {
+        "width": 39,
+        "height": 42
+      },
+      "aspect_ratio": 0.93,
+      "unique_colors": 33,
+      "pixel_density": 0.191,
+      "edge_sharpness": 0.444,
+      "color_variance": 116.2,
+      "quality": "good",
+      "index": 35
+    },
+    {
+      "bounds": [
+        261,
+        154,
+        27,
+        42
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 42
+      },
+      "aspect_ratio": 0.64,
+      "unique_colors": 19,
+      "pixel_density": 0.289,
+      "edge_sharpness": 0.679,
+      "color_variance": 116.2,
+      "quality": "good",
+      "index": 36
+    },
+    {
+      "bounds": [
+        307,
+        154,
+        37,
+        42
+      ],
+      "dimensions": {
+        "width": 37,
+        "height": 42
+      },
+      "aspect_ratio": 0.88,
+      "unique_colors": 12,
+      "pixel_density": 0.24,
+      "edge_sharpness": 0.556,
+      "color_variance": 113.9,
+      "quality": "good",
+      "index": 37
+    },
+    {
+      "bounds": [
+        358,
+        154,
+        35,
+        42
+      ],
+      "dimensions": {
+        "width": 35,
+        "height": 42
+      },
+      "aspect_ratio": 0.83,
+      "unique_colors": 12,
+      "pixel_density": 0.252,
+      "edge_sharpness": 0.59,
+      "color_variance": 113.8,
+      "quality": "good",
+      "index": 38
+    },
+    {
+      "bounds": [
+        409,
+        154,
+        33,
+        42
+      ],
+      "dimensions": {
+        "width": 33,
+        "height": 42
+      },
+      "aspect_ratio": 0.79,
+      "unique_colors": 10,
+      "pixel_density": 0.272,
+      "edge_sharpness": 0.518,
+      "color_variance": 110.1,
+      "quality": "good",
+      "index": 39
+    },
+    {
+      "bounds": [
+        460,
+        154,
+        31,
+        42
+      ],
+      "dimensions": {
+        "width": 31,
+        "height": 42
+      },
+      "aspect_ratio": 0.74,
+      "unique_colors": 12,
+      "pixel_density": 0.28,
+      "edge_sharpness": 0.607,
+      "color_variance": 112.9,
+      "quality": "good",
+      "index": 40
+    },
+    {
+      "bounds": [
+        9,
+        206,
+        26,
+        39
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 39
+      },
+      "aspect_ratio": 0.67,
+      "unique_colors": 18,
+      "pixel_density": 0.307,
+      "edge_sharpness": 0.733,
+      "color_variance": 118.5,
+      "quality": "good",
+      "index": 41
+    },
+    {
+      "bounds": [
+        58,
+        206,
+        34,
+        39
+      ],
+      "dimensions": {
+        "width": 34,
+        "height": 39
+      },
+      "aspect_ratio": 0.87,
+      "unique_colors": 12,
+      "pixel_density": 0.26,
+      "edge_sharpness": 0.619,
+      "color_variance": 119.5,
+      "quality": "good",
+      "index": 42
+    },
+    {
+      "bounds": [
+        109,
+        206,
+        33,
+        39
+      ],
+      "dimensions": {
+        "width": 33,
+        "height": 39
+      },
+      "aspect_ratio": 0.85,
+      "unique_colors": 12,
+      "pixel_density": 0.263,
+      "edge_sharpness": 0.624,
+      "color_variance": 119.5,
+      "quality": "good",
+      "index": 43
+    },
+    {
+      "bounds": [
+        158,
+        206,
+        35,
+        39
+      ],
+      "dimensions": {
+        "width": 35,
+        "height": 39
+      },
+      "aspect_ratio": 0.9,
+      "unique_colors": 12,
+      "pixel_density": 0.25,
+      "edge_sharpness": 0.575,
+      "color_variance": 119.9,
+      "quality": "good",
+      "index": 44
+    },
+    {
+      "bounds": [
+        209,
+        206,
+        34,
+        39
+      ],
+      "dimensions": {
+        "width": 34,
+        "height": 39
+      },
+      "aspect_ratio": 0.87,
+      "unique_colors": 12,
+      "pixel_density": 0.253,
+      "edge_sharpness": 0.579,
+      "color_variance": 119.9,
+      "quality": "good",
+      "index": 45
+    },
+    {
+      "bounds": [
+        258,
+        206,
+        34,
+        39
+      ],
+      "dimensions": {
+        "width": 34,
+        "height": 39
+      },
+      "aspect_ratio": 0.87,
+      "unique_colors": 12,
+      "pixel_density": 0.259,
+      "edge_sharpness": 0.619,
+      "color_variance": 119.0,
+      "quality": "good",
+      "index": 46
+    },
+    {
+      "bounds": [
+        309,
+        206,
+        33,
+        39
+      ],
+      "dimensions": {
+        "width": 33,
+        "height": 39
+      },
+      "aspect_ratio": 0.85,
+      "unique_colors": 12,
+      "pixel_density": 0.263,
+      "edge_sharpness": 0.624,
+      "color_variance": 119.0,
+      "quality": "good",
+      "index": 47
+    },
+    {
+      "bounds": [
+        358,
+        206,
+        27,
+        39
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 39
+      },
+      "aspect_ratio": 0.69,
+      "unique_colors": 18,
+      "pixel_density": 0.293,
+      "edge_sharpness": 0.711,
+      "color_variance": 118.8,
+      "quality": "good",
+      "index": 48
+    },
+    {
+      "bounds": [
+        406,
+        206,
+        27,
+        39
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 39
+      },
+      "aspect_ratio": 0.69,
+      "unique_colors": 18,
+      "pixel_density": 0.3,
+      "edge_sharpness": 0.73,
+      "color_variance": 118.4,
+      "quality": "good",
+      "index": 49
+    },
+    {
+      "bounds": [
+        458,
+        206,
+        32,
+        39
+      ],
+      "dimensions": {
+        "width": 32,
+        "height": 39
+      },
+      "aspect_ratio": 0.82,
+      "unique_colors": 21,
+      "pixel_density": 0.333,
+      "edge_sharpness": 0.787,
+      "color_variance": 117.1,
+      "quality": "good",
+      "index": 50
+    },
+    {
+      "bounds": [
+        7,
+        256,
+        36,
+        39
+      ],
+      "dimensions": {
+        "width": 36,
+        "height": 39
+      },
+      "aspect_ratio": 0.92,
+      "unique_colors": 5,
+      "pixel_density": 0.256,
+      "edge_sharpness": 0.47,
+      "color_variance": 119.0,
+      "quality": "good",
+      "index": 51
+    },
+    {
+      "bounds": [
+        57,
+        256,
+        36,
+        39
+      ],
+      "dimensions": {
+        "width": 36,
+        "height": 39
+      },
+      "aspect_ratio": 0.92,
+      "unique_colors": 5,
+      "pixel_density": 0.256,
+      "edge_sharpness": 0.465,
+      "color_variance": 119.0,
+      "quality": "good",
+      "index": 52
+    },
+    {
+      "bounds": [
+        109,
+        256,
+        27,
+        39
+      ],
+      "dimensions": {
+        "width": 27,
+        "height": 39
+      },
+      "aspect_ratio": 0.69,
+      "unique_colors": 6,
+      "pixel_density": 0.304,
+      "edge_sharpness": 0.632,
+      "color_variance": 118.9,
+      "quality": "good",
+      "index": 53
+    },
+    {
+      "bounds": [
+        159,
+        256,
+        33,
+        39
+      ],
+      "dimensions": {
+        "width": 33,
+        "height": 39
+      },
+      "aspect_ratio": 0.85,
+      "unique_colors": 8,
+      "pixel_density": 0.319,
+      "edge_sharpness": 0.613,
+      "color_variance": 117.8,
+      "quality": "good",
+      "index": 54
+    },
+    {
+      "bounds": [
+        209,
+        256,
+        29,
+        39
+      ],
+      "dimensions": {
+        "width": 29,
+        "height": 39
+      },
+      "aspect_ratio": 0.74,
+      "unique_colors": 5,
+      "pixel_density": 0.266,
+      "edge_sharpness": 0.495,
+      "color_variance": 118.6,
+      "quality": "good",
+      "index": 55
+    },
+    {
+      "bounds": [
+        260,
+        256,
+        26,
+        39
+      ],
+      "dimensions": {
+        "width": 26,
+        "height": 39
+      },
+      "aspect_ratio": 0.67,
+      "unique_colors": 9,
+      "pixel_density": 0.289,
+      "edge_sharpness": 0.686,
+      "color_variance": 119.4,
+      "quality": "good",
+      "index": 56
+    },
+    {
+      "bounds": [
+        306,
+        256,
+        32,
+        39
+      ],
+      "dimensions": {
+        "width": 32,
+        "height": 39
+      },
+      "aspect_ratio": 0.82,
+      "unique_colors": 9,
+      "pixel_density": 0.26,
+      "edge_sharpness": 0.706,
+      "color_variance": 116.8,
+      "quality": "good",
+      "index": 57
+    },
+    {
+      "bounds": [
+        351,
+        256,
+        37,
+        39
+      ],
+      "dimensions": {
+        "width": 37,
+        "height": 39
+      },
+      "aspect_ratio": 0.95,
+      "unique_colors": 9,
+      "pixel_density": 0.227,
+      "edge_sharpness": 0.629,
+      "color_variance": 115.8,
+      "quality": "good",
+      "index": 58
+    },
+    {
+      "bounds": [
+        402,
+        256,
+        41,
+        39
+      ],
+      "dimensions": {
+        "width": 41,
+        "height": 39
+      },
+      "aspect_ratio": 1.05,
+      "unique_colors": 12,
+      "pixel_density": 0.271,
+      "edge_sharpness": 0.72,
+      "color_variance": 118.1,
+      "quality": "good",
+      "index": 59
+    },
+    {
+      "bounds": [
+        461,
+        256,
+        29,
+        39
+      ],
+      "dimensions": {
+        "width": 29,
+        "height": 39
+      },
+      "aspect_ratio": 0.74,
+      "unique_colors": 9,
+      "pixel_density": 0.283,
+      "edge_sharpness": 0.675,
+      "color_variance": 119.3,
+      "quality": "good",
+      "index": 60
+    }
+  ],
+  "duplicates": [
+    {
+      "frame_a": 0,
+      "frame_b": 4,
+      "similarity": 0.999
+    },
+    {
+      "frame_a": 2,
+      "frame_b": 5,
+      "similarity": 0.994
+    },
+    {
+      "frame_a": 10,
+      "frame_b": 41,
+      "similarity": 0.944
+    },
+    {
+      "frame_a": 11,
+      "frame_b": 12,
+      "similarity": 0.962
+    },
+    {
+      "frame_a": 13,
+      "frame_b": 48,
+      "similarity": 0.941
+    },
+    {
+      "frame_a": 13,
+      "frame_b": 49,
+      "similarity": 0.937
+    },
+    {
+      "frame_a": 16,
+      "frame_b": 17,
+      "similarity": 1.0
+    },
+    {
+      "frame_a": 19,
+      "frame_b": 42,
+      "similarity": 0.951
+    },
+    {
+      "frame_a": 19,
+      "frame_b": 45,
+      "similarity": 0.947
+    },
+    {
+      "frame_a": 19,
+      "frame_b": 46,
+      "similarity": 0.95
+    },
+    {
+      "frame_a": 23,
+      "frame_b": 29,
+      "similarity": 0.938
+    },
+    {
+      "frame_a": 24,
+      "frame_b": 28,
+      "similarity": 0.937
+    },
+    {
+      "frame_a": 25,
+      "frame_b": 26,
+      "similarity": 0.996
+    },
+    {
+      "frame_a": 32,
+      "frame_b": 35,
+      "similarity": 0.955
+    },
+    {
+      "frame_a": 42,
+      "frame_b": 45,
+      "similarity": 0.996
+    },
+    {
+      "frame_a": 42,
+      "frame_b": 46,
+      "similarity": 1.0
+    },
+    {
+      "frame_a": 43,
+      "frame_b": 47,
+      "similarity": 1.0
+    },
+    {
+      "frame_a": 45,
+      "frame_b": 46,
+      "similarity": 0.997
+    },
+    {
+      "frame_a": 48,
+      "frame_b": 49,
+      "similarity": 0.996
+    },
+    {
+      "frame_a": 51,
+      "frame_b": 52,
+      "similarity": 1.0
+    }
+  ],
+  "row_groups": [
+    [
+      {
+        "index": 0,
+        "bounds": [
+          9,
+          5,
+          28,
+          40
+        ]
+      },
+      {
+        "index": 1,
+        "bounds": [
+          59,
+          5,
+          26,
+          40
+        ]
+      },
+      {
+        "index": 2,
+        "bounds": [
+          108,
+          5,
+          27,
+          40
+        ]
+      },
+      {
+        "index": 3,
+        "bounds": [
+          160,
+          5,
+          27,
+          40
+        ]
+      },
+      {
+        "index": 4,
+        "bounds": [
+          209,
+          5,
+          28,
+          40
+        ]
+      },
+      {
+        "index": 5,
+        "bounds": [
+          259,
+          5,
+          27,
+          40
+        ]
+      },
+      {
+        "index": 6,
+        "bounds": [
+          309,
+          5,
+          25,
+          40
+        ]
+      },
+      {
+        "index": 7,
+        "bounds": [
+          359,
+          5,
+          26,
+          40
+        ]
+      },
+      {
+        "index": 8,
+        "bounds": [
+          407,
+          5,
+          33,
+          40
+        ]
+      },
+      {
+        "index": 9,
+        "bounds": [
+          459,
+          5,
+          31,
+          40
+        ]
+      }
+    ],
+    [
+      {
+        "index": 10,
+        "bounds": [
+          9,
+          56,
+          26,
+          39
+        ]
+      },
+      {
+        "index": 11,
+        "bounds": [
+          59,
+          56,
+          26,
+          39
+        ]
+      },
+      {
+        "index": 12,
+        "bounds": [
+          109,
+          56,
+          26,
+          39
+        ]
+      },
+      {
+        "index": 13,
+        "bounds": [
+          159,
+          56,
+          27,
+          39
+        ]
+      },
+      {
+        "index": 14,
+        "bounds": [
+          209,
+          56,
+          46,
+          39
+        ]
+      },
+      {
+        "index": 15,
+        "bounds": [
+          260,
+          56,
+          45,
+          39
+        ]
+      },
+      {
+        "index": 16,
+        "bounds": [
+          309,
+          56,
+          25,
+          39
+        ]
+      },
+      {
+        "index": 17,
+        "bounds": [
+          359,
+          56,
+          25,
+          39
+        ]
+      },
+      {
+        "index": 18,
+        "bounds": [
+          407,
+          56,
+          44,
+          39
+        ]
+      },
+      {
+        "index": 19,
+        "bounds": [
+          458,
+          56,
+          34,
+          39
+        ]
+      },
+      {
+        "index": 20,
+        "bounds": [
+          483,
+          56,
+          17,
+          39
+        ]
+      }
+    ],
+    [
+      {
+        "index": 21,
+        "bounds": [
+          9,
+          104,
+          28,
+          41
+        ]
+      },
+      {
+        "index": 22,
+        "bounds": [
+          59,
+          104,
+          28,
+          41
+        ]
+      },
+      {
+        "index": 23,
+        "bounds": [
+          109,
+          104,
+          26,
+          41
+        ]
+      },
+      {
+        "index": 24,
+        "bounds": [
+          159,
+          104,
+          30,
+          41
+        ]
+      },
+      {
+        "index": 25,
+        "bounds": [
+          210,
+          104,
+          28,
+          41
+        ]
+      },
+      {
+        "index": 26,
+        "bounds": [
+          260,
+          104,
+          28,
+          41
+        ]
+      },
+      {
+        "index": 27,
+        "bounds": [
+          312,
+          104,
+          26,
+          41
+        ]
+      },
+      {
+        "index": 28,
+        "bounds": [
+          359,
+          104,
+          30,
+          41
+        ]
+      },
+      {
+        "index": 29,
+        "bounds": [
+          412,
+          104,
+          26,
+          41
+        ]
+      },
+      {
+        "index": 30,
+        "bounds": [
+          459,
+          104,
+          27,
+          41
+        ]
+      }
+    ],
+    [
+      {
+        "index": 31,
+        "bounds": [
+          11,
+          154,
+          25,
+          42
+        ]
+      },
+      {
+        "index": 32,
+        "bounds": [
+          51,
+          154,
+          39,
+          42
+        ]
+      },
+      {
+        "index": 33,
+        "bounds": [
+          96,
+          154,
+          43,
+          42
+        ]
+      },
+      {
+        "index": 34,
+        "bounds": [
+          150,
+          154,
+          39,
+          42
+        ]
+      },
+      {
+        "index": 35,
+        "bounds": [
+          200,
+          154,
+          39,
+          42
+        ]
+      },
+      {
+        "index": 36,
+        "bounds": [
+          261,
+          154,
+          27,
+          42
+        ]
+      },
+      {
+        "index": 37,
+        "bounds": [
+          307,
+          154,
+          37,
+          42
+        ]
+      },
+      {
+        "index": 38,
+        "bounds": [
+          358,
+          154,
+          35,
+          42
+        ]
+      },
+      {
+        "index": 39,
+        "bounds": [
+          409,
+          154,
+          33,
+          42
+        ]
+      },
+      {
+        "index": 40,
+        "bounds": [
+          460,
+          154,
+          31,
+          42
+        ]
+      }
+    ],
+    [
+      {
+        "index": 41,
+        "bounds": [
+          9,
+          206,
+          26,
+          39
+        ]
+      },
+      {
+        "index": 42,
+        "bounds": [
+          58,
+          206,
+          34,
+          39
+        ]
+      },
+      {
+        "index": 43,
+        "bounds": [
+          109,
+          206,
+          33,
+          39
+        ]
+      },
+      {
+        "index": 44,
+        "bounds": [
+          158,
+          206,
+          35,
+          39
+        ]
+      },
+      {
+        "index": 45,
+        "bounds": [
+          209,
+          206,
+          34,
+          39
+        ]
+      },
+      {
+        "index": 46,
+        "bounds": [
+          258,
+          206,
+          34,
+          39
+        ]
+      },
+      {
+        "index": 47,
+        "bounds": [
+          309,
+          206,
+          33,
+          39
+        ]
+      },
+      {
+        "index": 48,
+        "bounds": [
+          358,
+          206,
+          27,
+          39
+        ]
+      },
+      {
+        "index": 49,
+        "bounds": [
+          406,
+          206,
+          27,
+          39
+        ]
+      },
+      {
+        "index": 50,
+        "bounds": [
+          458,
+          206,
+          32,
+          39
+        ]
+      }
+    ],
+    [
+      {
+        "index": 51,
+        "bounds": [
+          7,
+          256,
+          36,
+          39
+        ]
+      },
+      {
+        "index": 52,
+        "bounds": [
+          57,
+          256,
+          36,
+          39
+        ]
+      },
+      {
+        "index": 53,
+        "bounds": [
+          109,
+          256,
+          27,
+          39
+        ]
+      },
+      {
+        "index": 54,
+        "bounds": [
+          159,
+          256,
+          33,
+          39
+        ]
+      },
+      {
+        "index": 55,
+        "bounds": [
+          209,
+          256,
+          29,
+          39
+        ]
+      },
+      {
+        "index": 56,
+        "bounds": [
+          260,
+          256,
+          26,
+          39
+        ]
+      },
+      {
+        "index": 57,
+        "bounds": [
+          306,
+          256,
+          32,
+          39
+        ]
+      },
+      {
+        "index": 58,
+        "bounds": [
+          351,
+          256,
+          37,
+          39
+        ]
+      },
+      {
+        "index": 59,
+        "bounds": [
+          402,
+          256,
+          41,
+          39
+        ]
+      },
+      {
+        "index": 60,
+        "bounds": [
+          461,
+          256,
+          29,
+          39
+        ]
+      }
+    ]
+  ],
+  "summary": {
+    "good": 60,
+    "empty": 0,
+    "sparse": 1,
+    "blurry": 0,
+    "noisy": 0
+  }
+}
