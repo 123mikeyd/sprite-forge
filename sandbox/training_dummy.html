@@ -28,13 +28,6 @@
     padding: 8px 0;
     font-size: 14px;
   }
-  #controls {
-    font-size: 12px;
-    color: #888;
-    margin-top: 8px;
-    text-align: center;
-    line-height: 1.6;
-  }
   #combo {
     position: fixed;
     top: 80px;
@@ -64,6 +57,13 @@
     0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
     100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
   }
+  #controls {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+    text-align: center;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -71,6 +71,7 @@
 <div id="hud">
   <span>HITS: <span id="hit-count">0</span></span>
   <span>MOVE: <span id="current-move">idle</span></span>
+  <span>STATE: <span id="state-id">0</span></span>
   <span>DUMMY HP: <span id="dummy-hp">100</span></span>
 </div>
 
@@ -80,141 +81,183 @@
 <div id="hit-splash"></div>
 
 <div id="controls">
-  [A/D] Move &nbsp;|&nbsp; [W] Jump &nbsp;|&nbsp; [J] Punch &nbsp;|&nbsp; [K] Kick &nbsp;|&nbsp; [L] Special
-  &nbsp;|&nbsp; [I] Uppercut &nbsp;|&nbsp; [U] Palm Thrust &nbsp;|&nbsp; [SPACE] Reset
+  [A/D] Walk &nbsp;|&nbsp; [W] Jump &nbsp;|&nbsp; [J] Left Punch &nbsp;|&nbsp; [K] Right Punch
+  &nbsp;|&nbsp; [L] Front Kick &nbsp;|&nbsp; [I] Uppercut &nbsp;|&nbsp; [U] Palm Thrust
+  &nbsp;|&nbsp; [O] Fireball &nbsp;|&nbsp; [H] Fly Kick &nbsp;|&nbsp; [SPACE] Reset
 </div>
 
 <script>
-// ===== SPRITE LOADING =====
-const SHEET_PATH = '../../test_sprites/cat_fighter.png';
-
+// ===== ALL 13 ANIMATIONS WITH MUGEN STATE_IDS =====
 const ANIMS = {
-  McIdle:             { frames: [[9,5,28,40],[160,5,27,40],[59,104,28,41],[9,104,28,41],[209,5,28,40],[359,56,25,39],[59,5,26,40]], fps:6, loop:true },
-  McFireBall:         { frames: [[9,56,26,39],[59,56,26,39],[109,56,26,39],[159,56,27,39],[209,56,46,39],[260,56,45,39],[458,56,34,39]], fps:10, loop:true },
-  McUpperCutt:        { frames: [[260,256,26,39],[306,256,32,39],[351,256,37,39],[402,256,41,39],[461,256,29,39]], fps:10, loop:false },
-  McSpinningUpperCutt:{ frames: [[109,104,26,41],[159,104,30,41],[210,104,28,41],[260,104,28,41],[312,104,26,41],[359,104,30,41],[412,104,26,41]], fps:10, loop:false },
-  McJumpKick:         { frames: [[309,5,25,40],[459,104,27,41],[11,154,25,42],[9,206,26,39],[209,206,34,39],[458,206,32,39],[358,206,27,39],[58,206,34,39],[309,56,25,39]], fps:10, loop:false },
-  McFirePunch:        { frames: [[307,154,37,42],[409,154,33,42],[358,154,35,42],[460,154,31,42],[259,5,27,40]], fps:12, loop:false },
-  McPalmThrust:       { frames: [[109,256,27,39],[209,256,29,39],[57,256,36,39],[7,256,36,39]], fps:12, loop:false },
-  McKnockout:         { frames: [[109,206,33,39],[51,154,39,42],[150,154,39,42],[96,154,43,42]], fps:10, loop:true },
-  McGetUp:            { frames: [[200,154,39,42],[261,154,27,42],[359,5,26,40]], fps:8, loop:false },
-  McFlyKick:          { frames: [[108,5,27,40],[158,206,35,39],[459,5,31,40],[407,5,33,40],[159,256,33,39]], fps:10, loop:false },
-  Mcother:            { frames: [[407,56,44,39],[483,56,17,39],[258,206,34,39],[406,206,27,39],[309,206,33,39]], fps:10, loop:false }
+  McIdle: {
+    frames: [[9,5,28,40],[259,5,27,40],[59,104,28,41]],
+    fps: 10, loop: true, state_id: 0,
+    label: 'IDLE'
+  },
+  McWalking: {
+    frames: [[160,5,27,40],[209,5,28,40],[9,5,28,40],[461,256,29,39]],
+    fps: 10, loop: true, state_id: 20,
+    label: 'WALK'
+  },
+  LeftPunch: {
+    frames: [[259,5,27,40],[307,154,37,42],[358,154,35,42]],
+    fps: 10, loop: false, state_id: 200,
+    label: 'LEFT PUNCH'
+  },
+  RightPunch: {
+    frames: [[9,206,26,39],[409,154,33,42],[460,154,31,42]],
+    fps: 10, loop: false, state_id: 210,
+    label: 'RIGHT PUNCH'
+  },
+  FrontKick: {
+    frames: [[9,206,26,39],[158,206,35,39],[209,206,34,39]],
+    fps: 10, loop: false, state_id: 230,
+    label: 'FRONT KICK'
+  },
+  McFlyKick: {
+    frames: [[259,5,27,40],[309,5,25,40],[359,5,26,40],[158,206,35,39],[459,5,31,40],[407,5,33,40]],
+    fps: 10, loop: false, state_id: 630,
+    label: 'FLY KICK'
+  },
+  McJumpKick: {
+    frames: [[309,5,25,40],[459,104,27,41],[11,154,25,42],[9,206,26,39],[209,206,34,39],[458,206,32,39],[358,206,27,39],[58,206,34,39],[309,56,25,39]],
+    fps: 10, loop: false, state_id: 630,
+    label: 'JUMP KICK'
+  },
+  McFireBall: {
+    frames: [[9,56,26,39],[59,56,26,39],[109,56,26,39],[159,56,27,39],[209,56,46,39],[260,56,45,39]],
+    fps: 10, loop: false, state_id: 1000,
+    label: 'FIREBALL'
+  },
+  McSpinningUpperCutt: {
+    frames: [[109,104,26,41],[159,104,30,41],[210,104,28,41],[260,104,28,41],[312,104,26,41],[359,104,30,41],[412,104,26,41]],
+    fps: 10, loop: false, state_id: 1010,
+    label: 'SPIN UPPERCUT'
+  },
+  McUpperCutt: {
+    frames: [[260,256,26,39],[306,256,32,39],[351,256,37,39],[402,256,41,39],[461,256,29,39]],
+    fps: 10, loop: false, state_id: 1010,
+    label: 'UPPERCUT'
+  },
+  McPalmThrust: {
+    frames: [[109,256,27,39],[209,256,29,39],[57,256,36,39],[7,256,36,39]],
+    fps: 10, loop: false, state_id: 1020,
+    label: 'PALM THRUST'
+  },
+  McKnockout: {
+    frames: [[109,206,33,39],[51,154,39,42],[150,154,39,42],[96,154,43,42]],
+    fps: 10, loop: false, state_id: 5000,
+    label: 'KNOCKOUT'
+  },
+  McGetUp: {
+    frames: [[200,154,39,42],[261,154,27,42],[359,5,26,40]],
+    fps: 8, loop: false, state_id: 5020,
+    label: 'GET UP'
+  }
 };
 
-// Which moves can hit the dummy (attack anims)
-const ATTACK_ANIMS = {
-  j: 'McFirePunch',
-  k: 'McJumpKick',
-  l: 'McFlyKick',
+// Input -> animation mapping
+const ATTACK_MAP = {
+  j: 'LeftPunch',
+  k: 'RightPunch',
+  l: 'FrontKick',
   i: 'McUpperCutt',
-  u: 'McPalmThrust'
+  u: 'McPalmThrust',
+  o: 'McFireBall',
+  h: 'McFlyKick'
 };
 
-const MOVE_NAMES = {
-  McIdle: 'Idle',
-  McFireBall: 'Walk',
-  McFirePunch: 'PUNCH',
-  McJumpKick: 'KICK',
-  McFlyKick: 'FLY KICK',
-  McUpperCutt: 'UPPERCUT',
-  McPalmThrust: 'PALM THRUST',
-  McSpinningUpperCutt: 'SPIN UPPER',
-  McKnockout: 'KNOCKOUT',
-  McGetUp: 'GET UP',
-  Mcother: 'other'
+// Hit window per animation (start frame, end frame, damage)
+const HIT_DATA = {
+  LeftPunch:          { start: 1, end: 1, dmg: 6  },
+  RightPunch:         { start: 1, end: 1, dmg: 8  },
+  FrontKick:          { start: 1, end: 2, dmg: 10 },
+  McFlyKick:          { start: 2, end: 4, dmg: 12 },
+  McJumpKick:         { start: 4, end: 5, dmg: 10 },
+  McFireBall:         { start: 3, end: 5, dmg: 14 },
+  McUpperCutt:        { start: 2, end: 3, dmg: 18 },
+  McSpinningUpperCutt:{ start: 2, end: 5, dmg: 20 },
+  McPalmThrust:       { start: 2, end: 3, dmg: 7  }
 };
 
 // ===== GAME STATE =====
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-
 let spriteSheet = null;
-let spriteLoaded = false;
 
 const player = {
   x: 200, y: 350,
   vx: 0, vy: 0,
-  facing: 1,  // 1=right, -1=left
+  facing: 1,
   anim: 'McIdle',
   animIdx: 0,
   animAcc: 0,
   grounded: true,
   attacking: false,
-  attackHitFrame: -1,
+  attackLanded: false,
   scale: 3
 };
 
 const dummy = {
   x: 550, y: 340,
-  hp: 100,
-  maxHp: 100,
-  hitTimer: 0,
-  shakeX: 0,
-  recovering: false,
-  recoverTimer: 0
+  hp: 100, maxHp: 100,
+  hitTimer: 0, shakeX: 0,
+  recovering: false, recoverTimer: 0
 };
 
-let hitCount = 0;
-let comboCount = 0;
-let comboTimer = 0;
-let lastTime = 0;
-let keys = {};
+let hitCount = 0, comboCount = 0, comboTimer = 0;
+let lastTime = 0, keys = {};
+let projectiles = [];
 
 // ===== LOAD SPRITE =====
 const img = new Image();
 img.onload = () => {
   spriteSheet = img;
-  spriteLoaded = true;
-  console.log('Sprite loaded:', img.width, 'x', img.height);
   requestAnimationFrame(gameLoop);
 };
 img.onerror = () => {
-  console.error('Failed to load sprite at:', SHEET_PATH);
-  // Try alternate path
   const img2 = new Image();
-  img2.onload = () => {
-    spriteSheet = img2;
-    spriteLoaded = true;
-    requestAnimationFrame(gameLoop);
-  };
+  img2.onload = () => { spriteSheet = img2; requestAnimationFrame(gameLoop); };
   img2.src = '../test_sprites/cat_fighter.png';
 };
-img.src = SHEET_PATH;
+img.src = '../../test_sprites/cat_fighter.png';
 
 // ===== INPUT =====
 document.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
+  const key = e.key.toLowerCase();
+  keys[key] = true;
 
-  // Attack inputs (only when not already attacking)
-  if (!player.attacking && ATTACK_ANIMS[e.key.toLowerCase()]) {
-    startAnim(ATTACK_ANIMS[e.key.toLowerCase()]);
+  if (!player.attacking && ATTACK_MAP[key]) {
+    startAnim(ATTACK_MAP[key]);
     player.attacking = true;
-    player.attackHitFrame = -1;
+    player.attackLanded = false;
   }
 
-  // Jump
-  if (e.key.toLowerCase() === 'w' && player.grounded) {
+  if (key === 'w' && player.grounded) {
     player.vy = -12;
     player.grounded = false;
-    if (!player.attacking) startAnim('McSpinningUpperCutt');
+    if (!player.attacking) {
+      startAnim('McJumpKick');
+      player.attacking = true;
+      player.attackLanded = false;
+    }
   }
 
-  // Reset
   if (e.key === ' ') resetGame();
 });
 
-document.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
+document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
 // ===== ANIMATION =====
 function startAnim(name) {
+  if (!ANIMS[name]) return;
   if (player.anim === name && ANIMS[name].loop) return;
   player.anim = name;
   player.animIdx = 0;
   player.animAcc = 0;
-  document.getElementById('current-move').textContent = MOVE_NAMES[name] || name;
+  const anim = ANIMS[name];
+  document.getElementById('current-move').textContent = anim.label;
+  document.getElementById('state-id').textContent = anim.state_id;
 }
 
 function updateAnim(dt) {
@@ -228,40 +271,83 @@ function updateAnim(dt) {
     player.animAcc -= msPerFrame;
     player.animIdx++;
 
-    // Check hit on attack frames (frame 2-3 of most attacks)
-    if (player.attacking && player.attackHitFrame === -1) {
-      const hitWindow = getHitWindow(player.anim);
-      if (hitWindow && player.animIdx >= hitWindow.start && player.animIdx <= hitWindow.end) {
+    // Hit detection on attack frames
+    if (player.attacking && !player.attackLanded) {
+      const hd = HIT_DATA[player.anim];
+      if (hd && player.animIdx >= hd.start && player.animIdx <= hd.end) {
         if (checkHit()) {
-          player.attackHitFrame = player.animIdx;
+          player.attackLanded = true;
+          applyHit(hd.dmg);
         }
       }
+    }
+
+    // Fireball projectile
+    if (player.anim === 'McFireBall' && player.animIdx === 4 && !player._fbSpawned) {
+      player._fbSpawned = true;
+      spawnFireball();
     }
 
     if (player.animIdx >= anim.frames.length) {
       if (anim.loop) {
         player.animIdx = 0;
       } else {
-        // Attack finished
         player.animIdx = anim.frames.length - 1;
         player.attacking = false;
+        player._fbSpawned = false;
         if (!keys['a'] && !keys['d']) startAnim('McIdle');
-        else startAnim('McFireBall');
+        else startAnim('McWalking');
       }
     }
   }
 }
 
-function getHitWindow(animName) {
-  const windows = {
-    McFirePunch: { start: 1, end: 2 },
-    McJumpKick: { start: 4, end: 5 },
-    McFlyKick: { start: 2, end: 3 },
-    McUpperCutt: { start: 2, end: 3 },
-    McPalmThrust: { start: 2, end: 3 },
-    McSpinningUpperCutt: { start: 2, end: 5 }
-  };
-  return windows[animName] || null;
+// ===== PROJECTILE =====
+function spawnFireball() {
+  projectiles.push({
+    x: player.x + (player.facing > 0 ? 80 : -30),
+    y: player.y + 30,
+    vx: player.facing * 8,
+    size: 18,
+    life: 120,
+    color: '#f80'
+  });
+}
+
+function updateProjectiles(dt) {
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+    p.x += p.vx;
+    p.life--;
+
+    // Hit dummy
+    const dx = dummy.x + dummy.shakeX;
+    if (p.x > dx && p.x < dx + 90 && p.y > dummy.y && p.y < dummy.y + 135) {
+      applyHit(14);
+      p.life = 0;
+    }
+
+    if (p.life <= 0 || p.x < 0 || p.x > 800) {
+      projectiles.splice(i, 1);
+    }
+  }
+}
+
+function drawProjectiles() {
+  for (const p of projectiles) {
+    ctx.save();
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = '#ff0';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 // ===== HIT DETECTION =====
@@ -271,67 +357,42 @@ function checkHit() {
   const pw = frame[2] * player.scale;
   const ph = frame[3] * player.scale;
 
-  // Player hitbox (extends forward from center based on facing)
   const px = player.facing > 0 ? player.x + pw * 0.3 : player.x - pw * 0.3;
   const py = player.y;
 
-  // Dummy hitbox
   const dx = dummy.x + dummy.shakeX;
   const dy = dummy.y;
   const dw = 30 * 3;
   const dh = 45 * 3;
 
-  // Simple AABB
-  const hitLeft = px + pw > dx;
-  const hitRight = px < dx + dw;
-  const hitTop = py + ph > dy;
-  const hitBottom = py < dy + dh;
-
-  if (hitLeft && hitRight && hitTop && hitBottom) {
-    applyHit();
-    return true;
-  }
-  return false;
+  return (px + pw > dx && px < dx + dw && py + ph > dy && py < dy + dh);
 }
 
-function applyHit() {
-  const damage = {
-    McFirePunch: 8,
-    McJumpKick: 10,
-    McFlyKick: 12,
-    McUpperCutt: 15,
-    McPalmThrust: 6,
-    McSpinningUpperCutt: 18
-  };
-
-  const dmg = damage[player.anim] || 5;
+function applyHit(dmg) {
   dummy.hp = Math.max(0, dummy.hp - dmg);
   dummy.hitTimer = 300;
   dummy.shakeX = player.facing > 0 ? 15 : -15;
 
   hitCount++;
   comboCount++;
-  comboTimer = 1500; // 1.5s combo window
+  comboTimer = 1500;
 
   document.getElementById('hit-count').textContent = hitCount;
   document.getElementById('dummy-hp').textContent = Math.round(dummy.hp);
 
-  // Show combo
   const comboEl = document.getElementById('combo');
   if (comboCount > 1) {
     comboEl.textContent = comboCount + ' HIT COMBO!';
     comboEl.classList.add('show');
   }
 
-  // Show hit splash
   const splashEl = document.getElementById('hit-splash');
-  const splashes = ['POW!', 'BAM!', 'WHAM!', 'SMACK!', 'CRACK!', 'THWACK!'];
+  const splashes = ['POW!', 'BAM!', 'WHAM!', 'SMACK!', 'CRACK!', 'THWACK!', 'BOOM!'];
   splashEl.textContent = splashes[Math.floor(Math.random() * splashes.length)];
   splashEl.classList.remove('show');
-  void splashEl.offsetWidth; // reflow
+  void splashEl.offsetWidth;
   splashEl.classList.add('show');
 
-  // Dummy KO
   if (dummy.hp <= 0 && !dummy.recovering) {
     dummy.recovering = true;
     dummy.recoverTimer = 2000;
@@ -342,57 +403,47 @@ function applyHit() {
 function updatePlayer(dt) {
   const speed = 4;
 
-  // Movement (only when grounded and not attacking)
   if (player.grounded && !player.attacking) {
     if (keys['a']) {
       player.vx = -speed;
       player.facing = -1;
-      startAnim('McFireBall');
+      startAnim('McWalking');
     } else if (keys['d']) {
       player.vx = speed;
       player.facing = 1;
-      startAnim('McFireBall');
+      startAnim('McWalking');
     } else {
       player.vx = 0;
-      if (!player.attacking) startAnim('McIdle');
-    }
-  }
-
-  // Gravity
-  if (!player.grounded) {
-    player.vy += 0.6;
-  }
-
-  player.x += player.vx;
-  player.y += player.vy;
-
-  // Ground collision
-  const groundY = 350;
-  if (player.y >= groundY) {
-    player.y = groundY;
-    player.vy = 0;
-    player.grounded = true;
-    if (player.anim === 'McSpinningUpperCutt') {
-      player.attacking = false;
       startAnim('McIdle');
     }
   }
 
-  // Bounds
+  if (!player.grounded) player.vy += 0.6;
+
+  player.x += player.vx;
+  player.y += player.vy;
+
+  if (player.y >= 350) {
+    player.y = 350;
+    player.vy = 0;
+    player.grounded = true;
+    if (player.anim === 'McJumpKick' || player.anim === 'McFlyKick' || player.anim === 'McSpinningUpperCutt') {
+      player.attacking = false;
+      player._fbSpawned = false;
+      startAnim('McIdle');
+    }
+  }
+
   player.x = Math.max(50, Math.min(700, player.x));
 }
 
 function updateDummy(dt) {
-  // Shake recovery
   if (dummy.hitTimer > 0) {
     dummy.hitTimer -= dt;
     dummy.shakeX *= 0.85;
-    if (dummy.hitTimer <= 0) {
-      dummy.shakeX = 0;
-    }
+    if (dummy.hitTimer <= 0) dummy.shakeX = 0;
   }
 
-  // Recovery from KO
   if (dummy.recovering) {
     dummy.recoverTimer -= dt;
     if (dummy.recoverTimer <= 0) {
@@ -402,7 +453,6 @@ function updateDummy(dt) {
     }
   }
 
-  // Combo timeout
   if (comboTimer > 0) {
     comboTimer -= dt;
     if (comboTimer <= 0) {
@@ -414,20 +464,19 @@ function updateDummy(dt) {
 
 // ===== DRAWING =====
 function drawPlayer() {
-  if (!spriteLoaded) return;
-
+  if (!spriteSheet) return;
   const anim = ANIMS[player.anim];
-  const frame = anim.frames[player.animIdx];
+  const frame = anim.frames[Math.min(player.animIdx, anim.frames.length - 1)];
   const [sx, sy, sw, sh] = frame;
-  const scale = player.scale;
+  const s = player.scale;
 
   ctx.save();
   if (player.facing < 0) {
-    ctx.translate(player.x + sw * scale, player.y);
+    ctx.translate(player.x + sw * s, player.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(spriteSheet, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale);
+    ctx.drawImage(spriteSheet, sx, sy, sw, sh, 0, 0, sw * s, sh * s);
   } else {
-    ctx.drawImage(spriteSheet, sx, sy, sw, sh, player.x, player.y, sw * scale, sh * scale);
+    ctx.drawImage(spriteSheet, sx, sy, sw, sh, player.x, player.y, sw * s, sh * s);
   }
   ctx.restore();
 }
@@ -435,41 +484,35 @@ function drawPlayer() {
 function drawDummy() {
   const dx = dummy.x + dummy.shakeX;
   const dy = dummy.y;
-  const scale = 3;
+  const s = 3;
   const hpRatio = dummy.hp / dummy.maxHp;
 
   ctx.save();
 
   if (dummy.recovering) {
-    // Fallen over
-    ctx.translate(dx + 30 * scale / 2, dy + 45 * scale);
+    ctx.translate(dx + 30 * s / 2, dy + 45 * s);
     ctx.rotate(Math.PI / 2.5);
-    ctx.translate(-30 * scale / 2, -45 * scale);
+    ctx.translate(-30 * s / 2, -45 * s);
   }
 
-  // Post (vertical log)
+  // Post
   ctx.fillStyle = '#8B6914';
-  ctx.fillRect(dx + 12 * scale, dy + 15 * scale, 6 * scale, 30 * scale);
-
-  // Cross bar (arms)
+  ctx.fillRect(dx + 12 * s, dy + 15 * s, 6 * s, 30 * s);
+  // Arms
   ctx.fillStyle = '#A0782C';
-  ctx.fillRect(dx + 2 * scale, dy + 18 * scale, 26 * scale, 5 * scale);
-
-  // Head (round)
+  ctx.fillRect(dx + 2 * s, dy + 18 * s, 26 * s, 5 * s);
+  // Head
   ctx.fillStyle = '#C4943C';
   ctx.beginPath();
-  ctx.arc(dx + 15 * scale, dy + 10 * scale, 10 * scale, 0, Math.PI * 2);
+  ctx.arc(dx + 15 * s, dy + 10 * s, 10 * s, 0, Math.PI * 2);
   ctx.fill();
 
-  // Face features
-  ctx.fillStyle = '#333';
-  // Eyes (X marks when hit)
+  // Eyes
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
   if (dummy.hitTimer > 0) {
-    // X eyes
-    const ex1 = dx + 10 * scale, ey = dy + 8 * scale;
-    const ex2 = dx + 20 * scale;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#333';
+    const ex1 = dx + 10 * s, ey = dy + 8 * s;
+    const ex2 = dx + 20 * s;
     ctx.beginPath();
     ctx.moveTo(ex1 - 3, ey - 3); ctx.lineTo(ex1 + 3, ey + 3);
     ctx.moveTo(ex1 + 3, ey - 3); ctx.lineTo(ex1 - 3, ey + 3);
@@ -477,10 +520,10 @@ function drawDummy() {
     ctx.moveTo(ex2 + 3, ey - 3); ctx.lineTo(ex2 - 3, ey + 3);
     ctx.stroke();
   } else {
-    // Normal dot eyes
+    ctx.fillStyle = '#333';
     ctx.beginPath();
-    ctx.arc(dx + 10 * scale, dy + 8 * scale, 2 * scale, 0, Math.PI * 2);
-    ctx.arc(dx + 20 * scale, dy + 8 * scale, 2 * scale, 0, Math.PI * 2);
+    ctx.arc(dx + 10 * s, dy + 8 * s, 2 * s, 0, Math.PI * 2);
+    ctx.arc(dx + 20 * s, dy + 8 * s, 2 * s, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -489,39 +532,34 @@ function drawDummy() {
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   if (dummy.hitTimer > 0) {
-    // Ouch mouth
-    ctx.arc(dx + 15 * scale, dy + 14 * scale, 3 * scale, 0, Math.PI * 2);
+    ctx.arc(dx + 15 * s, dy + 14 * s, 3 * s, 0, Math.PI * 2);
   } else {
-    // Flat line
-    ctx.moveTo(dx + 10 * scale, dy + 14 * scale);
-    ctx.lineTo(dx + 20 * scale, dy + 14 * scale);
+    ctx.moveTo(dx + 10 * s, dy + 14 * s);
+    ctx.lineTo(dx + 20 * s, dy + 14 * s);
   }
   ctx.stroke();
 
-  // Straw sticking out of head
+  // Straw
   ctx.strokeStyle = '#DAA520';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(dx + 12 * scale, dy);
-  ctx.lineTo(dx + 20 * scale, dy - 8 * scale);
+  ctx.moveTo(dx + 12 * s, dy);
+  ctx.lineTo(dx + 20 * s, dy - 8 * s);
   ctx.stroke();
 
-  // Rope ties
+  // Rope
   ctx.strokeStyle = '#654321';
-  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(dx + 10 * scale, dy + 25 * scale);
-  ctx.lineTo(dx + 20 * scale, dy + 25 * scale);
+  ctx.moveTo(dx + 10 * s, dy + 25 * s);
+  ctx.lineTo(dx + 20 * s, dy + 25 * s);
   ctx.stroke();
 
   ctx.restore();
 
-  // HP bar above dummy
-  const barW = 80;
-  const barH = 8;
-  const barX = dx + 15 * scale - barW / 2;
+  // HP bar
+  const barW = 80, barH = 8;
+  const barX = dx + 15 * s - barW / 2;
   const barY = dy - 20;
-
   ctx.fillStyle = '#333';
   ctx.fillRect(barX, barY, barW, barH);
   ctx.fillStyle = hpRatio > 0.5 ? '#0c0' : hpRatio > 0.25 ? '#cc0' : '#c00';
@@ -529,109 +567,79 @@ function drawDummy() {
   ctx.strokeStyle = '#666';
   ctx.strokeRect(barX, barY, barW, barH);
 
-  // Label
   ctx.fillStyle = '#aaa';
   ctx.font = '12px Courier New';
   ctx.textAlign = 'center';
-  ctx.fillText('TRAINING DUMMY', dx + 15 * scale, barY - 5);
+  ctx.fillText('TRAINING DUMMY', dx + 15 * s, barY - 5);
 }
 
 function drawBackground() {
-  // Sky gradient
   const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
   grad.addColorStop(0, '#0a0a2e');
   grad.addColorStop(1, '#1a1a3e');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Stars
   ctx.fillStyle = '#fff';
   for (let i = 0; i < 50; i++) {
-    const sx = (i * 137 + 42) % 800;
-    const sy = (i * 89 + 17) % 300;
-    ctx.fillRect(sx, sy, 1, 1);
+    ctx.fillRect((i * 137 + 42) % 800, (i * 89 + 17) % 300, 1, 1);
   }
 
-  // Ground
   ctx.fillStyle = '#2a2a1a';
   ctx.fillRect(0, 430, canvas.width, 70);
-
-  // Ground line
   ctx.strokeStyle = '#4a4a3a';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, 430);
-  ctx.lineTo(canvas.width, 430);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 430); ctx.lineTo(canvas.width, 430); ctx.stroke();
 
-  // Floor tiles
   ctx.strokeStyle = '#333320';
   ctx.lineWidth = 1;
   for (let x = 0; x < canvas.width; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 430);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, 430); ctx.lineTo(x, canvas.height); ctx.stroke();
   }
 
-  // "TRAINING ROOM" sign
   ctx.fillStyle = '#666';
   ctx.font = '16px Courier New';
   ctx.textAlign = 'center';
   ctx.fillText('== TRAINING ROOM ==', 400, 25);
-}
 
-function drawControls() {
   ctx.fillStyle = '#444';
   ctx.font = '11px Courier New';
   ctx.textAlign = 'left';
-  const y = canvas.height - 10;
-  ctx.fillText('J=Punch  K=Kick  L=FlyKick  I=Uppercut  U=Palm  W=Jump  AD=Move', 10, y);
+  ctx.fillText('J=LP  K=RP  L=FK  I=Upp  U=Palm  O=Fireball  H=FlyKick  W=Jump  AD=Walk', 10, canvas.height - 10);
 }
 
 // ===== GAME LOOP =====
 function gameLoop(timestamp) {
-  const dt = timestamp - lastTime;
+  const dt = Math.min(timestamp - lastTime, 100);
   lastTime = timestamp;
-
-  if (dt > 100) { // skip big gaps
-    requestAnimationFrame(gameLoop);
-    return;
-  }
 
   updatePlayer(dt);
   updateAnim(dt);
   updateDummy(dt);
+  updateProjectiles(dt);
 
-  // Clear & draw
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
   drawDummy();
+  drawProjectiles();
   drawPlayer();
-  drawControls();
 
   requestAnimationFrame(gameLoop);
 }
 
 function resetGame() {
-  player.x = 200;
-  player.y = 350;
-  player.vx = 0;
-  player.vy = 0;
-  player.facing = 1;
-  player.attacking = false;
+  player.x = 200; player.y = 350;
+  player.vx = 0; player.vy = 0;
+  player.facing = 1; player.attacking = false;
+  player.attackLanded = false; player._fbSpawned = false;
+  projectiles = [];
   startAnim('McIdle');
 
   dummy.hp = dummy.maxHp;
-  dummy.hitTimer = 0;
-  dummy.shakeX = 0;
-  dummy.recovering = false;
-  dummy.recoverTimer = 0;
+  dummy.hitTimer = 0; dummy.shakeX = 0;
+  dummy.recovering = false; dummy.recoverTimer = 0;
 
-  hitCount = 0;
-  comboCount = 0;
-  comboTimer = 0;
-
+  hitCount = 0; comboCount = 0; comboTimer = 0;
   document.getElementById('hit-count').textContent = '0';
   document.getElementById('dummy-hp').textContent = '100';
   document.getElementById('combo').classList.remove('show');
