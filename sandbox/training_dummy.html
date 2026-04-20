@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cat Fighter - Training Dummy</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: #0f0;
+    overflow: hidden;
+  }
+  canvas {
+    border: 2px solid #333;
+    image-rendering: pixelated;
+    background: #1a1a2e;
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    width: 800px;
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  #controls {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #combo {
+    position: fixed;
+    top: 80px;
+    right: 40px;
+    font-size: 32px;
+    color: #ff0;
+    text-shadow: 2px 2px #000;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #combo.show { opacity: 1; }
+  #hit-splash {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: #f44;
+    text-shadow: 3px 3px #000;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #hit-splash.show {
+    animation: splash 0.4s ease-out forwards;
+  }
+  @keyframes splash {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+    100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <span>HITS: <span id="hit-count">0</span></span>
+  <span>MOVE: <span id="current-move">idle</span></span>
+  <span>DUMMY HP: <span id="dummy-hp">100</span></span>
+</div>
+
+<canvas id="game" width="800" height="500"></canvas>
+
+<div id="combo"></div>
+<div id="hit-splash"></div>
+
+<div id="controls">
+  [A/D] Move &nbsp;|&nbsp; [W] Jump &nbsp;|&nbsp; [J] Punch &nbsp;|&nbsp; [K] Kick &nbsp;|&nbsp; [L] Special
+  &nbsp;|&nbsp; [I] Uppercut &nbsp;|&nbsp; [U] Palm Thrust &nbsp;|&nbsp; [SPACE] Reset
+</div>
+
+<script>
+// ===== SPRITE LOADING =====
+const SHEET_PATH = '../../test_sprites/cat_fighter.png';
+
+const ANIMS = {
+  McIdle:             { frames: [[9,5,28,40],[160,5,27,40],[59,104,28,41],[9,104,28,41],[209,5,28,40],[359,56,25,39],[59,5,26,40]], fps:6, loop:true },
+  McFireBall:         { frames: [[9,56,26,39],[59,56,26,39],[109,56,26,39],[159,56,27,39],[209,56,46,39],[260,56,45,39],[458,56,34,39]], fps:10, loop:true },
+  McUpperCutt:        { frames: [[260,256,26,39],[306,256,32,39],[351,256,37,39],[402,256,41,39],[461,256,29,39]], fps:10, loop:false },
+  McSpinningUpperCutt:{ frames: [[109,104,26,41],[159,104,30,41],[210,104,28,41],[260,104,28,41],[312,104,26,41],[359,104,30,41],[412,104,26,41]], fps:10, loop:false },
+  McJumpKick:         { frames: [[309,5,25,40],[459,104,27,41],[11,154,25,42],[9,206,26,39],[209,206,34,39],[458,206,32,39],[358,206,27,39],[58,206,34,39],[309,56,25,39]], fps:10, loop:false },
+  McFirePunch:        { frames: [[307,154,37,42],[409,154,33,42],[358,154,35,42],[460,154,31,42],[259,5,27,40]], fps:12, loop:false },
+  McPalmThrust:       { frames: [[109,256,27,39],[209,256,29,39],[57,256,36,39],[7,256,36,39]], fps:12, loop:false },
+  McKnockout:         { frames: [[109,206,33,39],[51,154,39,42],[150,154,39,42],[96,154,43,42]], fps:10, loop:true },
+  McGetUp:            { frames: [[200,154,39,42],[261,154,27,42],[359,5,26,40]], fps:8, loop:false },
+  McFlyKick:          { frames: [[108,5,27,40],[158,206,35,39],[459,5,31,40],[407,5,33,40],[159,256,33,39]], fps:10, loop:false },
+  Mcother:            { frames: [[407,56,44,39],[483,56,17,39],[258,206,34,39],[406,206,27,39],[309,206,33,39]], fps:10, loop:false }
+};
+
+// Which moves can hit the dummy (attack anims)
+const ATTACK_ANIMS = {
+  j: 'McFirePunch',
+  k: 'McJumpKick',
+  l: 'McFlyKick',
+  i: 'McUpperCutt',
+  u: 'McPalmThrust'
+};
+
+const MOVE_NAMES = {
+  McIdle: 'Idle',
+  McFireBall: 'Walk',
+  McFirePunch: 'PUNCH',
+  McJumpKick: 'KICK',
+  McFlyKick: 'FLY KICK',
+  McUpperCutt: 'UPPERCUT',
+  McPalmThrust: 'PALM THRUST',
+  McSpinningUpperCutt: 'SPIN UPPER',
+  McKnockout: 'KNOCKOUT',
+  McGetUp: 'GET UP',
+  Mcother: 'other'
+};
+
+// ===== GAME STATE =====
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let spriteSheet = null;
+let spriteLoaded = false;
+
+const player = {
+  x: 200, y: 350,
+  vx: 0, vy: 0,
+  facing: 1,  // 1=right, -1=left
+  anim: 'McIdle',
+  animIdx: 0,
+  animAcc: 0,
+  grounded: true,
+  attacking: false,
+  attackHitFrame: -1,
+  scale: 3
+};
+
+const dummy = {
+  x: 550, y: 340,
+  hp: 100,
+  maxHp: 100,
+  hitTimer: 0,
+  shakeX: 0,
+  recovering: false,
+  recoverTimer: 0
+};
+
+let hitCount = 0;
+let comboCount = 0;
+let comboTimer = 0;
+let lastTime = 0;
+let keys = {};
+
+// ===== LOAD SPRITE =====
+const img = new Image();
+img.onload = () => {
+  spriteSheet = img;
+  spriteLoaded = true;
+  console.log('Sprite loaded:', img.width, 'x', img.height);
+  requestAnimationFrame(gameLoop);
+};
+img.onerror = () => {
+  console.error('Failed to load sprite at:', SHEET_PATH);
+  // Try alternate path
+  const img2 = new Image();
+  img2.onload = () => {
+    spriteSheet = img2;
+    spriteLoaded = true;
+    requestAnimationFrame(gameLoop);
+  };
+  img2.src = '../test_sprites/cat_fighter.png';
+};
+img.src = SHEET_PATH;
+
+// ===== INPUT =====
+document.addEventListener('keydown', (e) => {
+  keys[e.key.toLowerCase()] = true;
+
+  // Attack inputs (only when not already attacking)
+  if (!player.attacking && ATTACK_ANIMS[e.key.toLowerCase()]) {
+    startAnim(ATTACK_ANIMS[e.key.toLowerCase()]);
+    player.attacking = true;
+    player.attackHitFrame = -1;
+  }
+
+  // Jump
+  if (e.key.toLowerCase() === 'w' && player.grounded) {
+    player.vy = -12;
+    player.grounded = false;
+    if (!player.attacking) startAnim('McSpinningUpperCutt');
+  }
+
+  // Reset
+  if (e.key === ' ') resetGame();
+});
+
+document.addEventListener('keyup', (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// ===== ANIMATION =====
+function startAnim(name) {
+  if (player.anim === name && ANIMS[name].loop) return;
+  player.anim = name;
+  player.animIdx = 0;
+  player.animAcc = 0;
+  document.getElementById('current-move').textContent = MOVE_NAMES[name] || name;
+}
+
+function updateAnim(dt) {
+  const anim = ANIMS[player.anim];
+  if (!anim) return;
+
+  player.animAcc += dt;
+  const msPerFrame = 1000 / anim.fps;
+
+  while (player.animAcc >= msPerFrame) {
+    player.animAcc -= msPerFrame;
+    player.animIdx++;
+
+    // Check hit on attack frames (frame 2-3 of most attacks)
+    if (player.attacking && player.attackHitFrame === -1) {
+      const hitWindow = getHitWindow(player.anim);
+      if (hitWindow && player.animIdx >= hitWindow.start && player.animIdx <= hitWindow.end) {
+        if (checkHit()) {
+          player.attackHitFrame = player.animIdx;
+        }
+      }
+    }
+
+    if (player.animIdx >= anim.frames.length) {
+      if (anim.loop) {
+        player.animIdx = 0;
+      } else {
+        // Attack finished
+        player.animIdx = anim.frames.length - 1;
+        player.attacking = false;
+        if (!keys['a'] && !keys['d']) startAnim('McIdle');
+        else startAnim('McFireBall');
+      }
+    }
+  }
+}
+
+function getHitWindow(animName) {
+  const windows = {
+    McFirePunch: { start: 1, end: 2 },
+    McJumpKick: { start: 4, end: 5 },
+    McFlyKick: { start: 2, end: 3 },
+    McUpperCutt: { start: 2, end: 3 },
+    McPalmThrust: { start: 2, end: 3 },
+    McSpinningUpperCutt: { start: 2, end: 5 }
+  };
+  return windows[animName] || null;
+}
+
+// ===== HIT DETECTION =====
+function checkHit() {
+  const anim = ANIMS[player.anim];
+  const frame = anim.frames[player.animIdx];
+  const pw = frame[2] * player.scale;
+  const ph = frame[3] * player.scale;
+
+  // Player hitbox (extends forward from center based on facing)
+  const px = player.facing > 0 ? player.x + pw * 0.3 : player.x - pw * 0.3;
+  const py = player.y;
+
+  // Dummy hitbox
+  const dx = dummy.x + dummy.shakeX;
+  const dy = dummy.y;
+  const dw = 30 * 3;
+  const dh = 45 * 3;
+
+  // Simple AABB
+  const hitLeft = px + pw > dx;
+  const hitRight = px < dx + dw;
+  const hitTop = py + ph > dy;
+  const hitBottom = py < dy + dh;
+
+  if (hitLeft && hitRight && hitTop && hitBottom) {
+    applyHit();
+    return true;
+  }
+  return false;
+}
+
+function applyHit() {
+  const damage = {
+    McFirePunch: 8,
+    McJumpKick: 10,
+    McFlyKick: 12,
+    McUpperCutt: 15,
+    McPalmThrust: 6,
+    McSpinningUpperCutt: 18
+  };
+
+  const dmg = damage[player.anim] || 5;
+  dummy.hp = Math.max(0, dummy.hp - dmg);
+  dummy.hitTimer = 300;
+  dummy.shakeX = player.facing > 0 ? 15 : -15;
+
+  hitCount++;
+  comboCount++;
+  comboTimer = 1500; // 1.5s combo window
+
+  document.getElementById('hit-count').textContent = hitCount;
+  document.getElementById('dummy-hp').textContent = Math.round(dummy.hp);
+
+  // Show combo
+  const comboEl = document.getElementById('combo');
+  if (comboCount > 1) {
+    comboEl.textContent = comboCount + ' HIT COMBO!';
+    comboEl.classList.add('show');
+  }
+
+  // Show hit splash
+  const splashEl = document.getElementById('hit-splash');
+  const splashes = ['POW!', 'BAM!', 'WHAM!', 'SMACK!', 'CRACK!', 'THWACK!'];
+  splashEl.textContent = splashes[Math.floor(Math.random() * splashes.length)];
+  splashEl.classList.remove('show');
+  void splashEl.offsetWidth; // reflow
+  splashEl.classList.add('show');
+
+  // Dummy KO
+  if (dummy.hp <= 0 && !dummy.recovering) {
+    dummy.recovering = true;
+    dummy.recoverTimer = 2000;
+  }
+}
+
+// ===== PHYSICS =====
+function updatePlayer(dt) {
+  const speed = 4;
+
+  // Movement (only when grounded and not attacking)
+  if (player.grounded && !player.attacking) {
+    if (keys['a']) {
+      player.vx = -speed;
+      player.facing = -1;
+      startAnim('McFireBall');
+    } else if (keys['d']) {
+      player.vx = speed;
+      player.facing = 1;
+      startAnim('McFireBall');
+    } else {
+      player.vx = 0;
+      if (!player.attacking) startAnim('McIdle');
+    }
+  }
+
+  // Gravity
+  if (!player.grounded) {
+    player.vy += 0.6;
+  }
+
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // Ground collision
+  const groundY = 350;
+  if (player.y >= groundY) {
+    player.y = groundY;
+    player.vy = 0;
+    player.grounded = true;
+    if (player.anim === 'McSpinningUpperCutt') {
+      player.attacking = false;
+      startAnim('McIdle');
+    }
+  }
+
+  // Bounds
+  player.x = Math.max(50, Math.min(700, player.x));
+}
+
+function updateDummy(dt) {
+  // Shake recovery
+  if (dummy.hitTimer > 0) {
+    dummy.hitTimer -= dt;
+    dummy.shakeX *= 0.85;
+    if (dummy.hitTimer <= 0) {
+      dummy.shakeX = 0;
+    }
+  }
+
+  // Recovery from KO
+  if (dummy.recovering) {
+    dummy.recoverTimer -= dt;
+    if (dummy.recoverTimer <= 0) {
+      dummy.recovering = false;
+      dummy.hp = dummy.maxHp;
+      document.getElementById('dummy-hp').textContent = dummy.hp;
+    }
+  }
+
+  // Combo timeout
+  if (comboTimer > 0) {
+    comboTimer -= dt;
+    if (comboTimer <= 0) {
+      comboCount = 0;
+      document.getElementById('combo').classList.remove('show');
+    }
+  }
+}
+
+// ===== DRAWING =====
+function drawPlayer() {
+  if (!spriteLoaded) return;
+
+  const anim = ANIMS[player.anim];
+  const frame = anim.frames[player.animIdx];
+  const [sx, sy, sw, sh] = frame;
+  const scale = player.scale;
+
+  ctx.save();
+  if (player.facing < 0) {
+    ctx.translate(player.x + sw * scale, player.y);
+    ctx.scale(-1, 1);
+    ctx.drawImage(spriteSheet, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale);
+  } else {
+    ctx.drawImage(spriteSheet, sx, sy, sw, sh, player.x, player.y, sw * scale, sh * scale);
+  }
+  ctx.restore();
+}
+
+function drawDummy() {
+  const dx = dummy.x + dummy.shakeX;
+  const dy = dummy.y;
+  const scale = 3;
+  const hpRatio = dummy.hp / dummy.maxHp;
+
+  ctx.save();
+
+  if (dummy.recovering) {
+    // Fallen over
+    ctx.translate(dx + 30 * scale / 2, dy + 45 * scale);
+    ctx.rotate(Math.PI / 2.5);
+    ctx.translate(-30 * scale / 2, -45 * scale);
+  }
+
+  // Post (vertical log)
+  ctx.fillStyle = '#8B6914';
+  ctx.fillRect(dx + 12 * scale, dy + 15 * scale, 6 * scale, 30 * scale);
+
+  // Cross bar (arms)
+  ctx.fillStyle = '#A0782C';
+  ctx.fillRect(dx + 2 * scale, dy + 18 * scale, 26 * scale, 5 * scale);
+
+  // Head (round)
+  ctx.fillStyle = '#C4943C';
+  ctx.beginPath();
+  ctx.arc(dx + 15 * scale, dy + 10 * scale, 10 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Face features
+  ctx.fillStyle = '#333';
+  // Eyes (X marks when hit)
+  if (dummy.hitTimer > 0) {
+    // X eyes
+    const ex1 = dx + 10 * scale, ey = dy + 8 * scale;
+    const ex2 = dx + 20 * scale;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(ex1 - 3, ey - 3); ctx.lineTo(ex1 + 3, ey + 3);
+    ctx.moveTo(ex1 + 3, ey - 3); ctx.lineTo(ex1 - 3, ey + 3);
+    ctx.moveTo(ex2 - 3, ey - 3); ctx.lineTo(ex2 + 3, ey + 3);
+    ctx.moveTo(ex2 + 3, ey - 3); ctx.lineTo(ex2 - 3, ey + 3);
+    ctx.stroke();
+  } else {
+    // Normal dot eyes
+    ctx.beginPath();
+    ctx.arc(dx + 10 * scale, dy + 8 * scale, 2 * scale, 0, Math.PI * 2);
+    ctx.arc(dx + 20 * scale, dy + 8 * scale, 2 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Mouth
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (dummy.hitTimer > 0) {
+    // Ouch mouth
+    ctx.arc(dx + 15 * scale, dy + 14 * scale, 3 * scale, 0, Math.PI * 2);
+  } else {
+    // Flat line
+    ctx.moveTo(dx + 10 * scale, dy + 14 * scale);
+    ctx.lineTo(dx + 20 * scale, dy + 14 * scale);
+  }
+  ctx.stroke();
+
+  // Straw sticking out of head
+  ctx.strokeStyle = '#DAA520';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(dx + 12 * scale, dy);
+  ctx.lineTo(dx + 20 * scale, dy - 8 * scale);
+  ctx.stroke();
+
+  // Rope ties
+  ctx.strokeStyle = '#654321';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(dx + 10 * scale, dy + 25 * scale);
+  ctx.lineTo(dx + 20 * scale, dy + 25 * scale);
+  ctx.stroke();
+
+  ctx.restore();
+
+  // HP bar above dummy
+  const barW = 80;
+  const barH = 8;
+  const barX = dx + 15 * scale - barW / 2;
+  const barY = dy - 20;
+
+  ctx.fillStyle = '#333';
+  ctx.fillRect(barX, barY, barW, barH);
+  ctx.fillStyle = hpRatio > 0.5 ? '#0c0' : hpRatio > 0.25 ? '#cc0' : '#c00';
+  ctx.fillRect(barX + 1, barY + 1, (barW - 2) * hpRatio, barH - 2);
+  ctx.strokeStyle = '#666';
+  ctx.strokeRect(barX, barY, barW, barH);
+
+  // Label
+  ctx.fillStyle = '#aaa';
+  ctx.font = '12px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText('TRAINING DUMMY', dx + 15 * scale, barY - 5);
+}
+
+function drawBackground() {
+  // Sky gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#0a0a2e');
+  grad.addColorStop(1, '#1a1a3e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Stars
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 50; i++) {
+    const sx = (i * 137 + 42) % 800;
+    const sy = (i * 89 + 17) % 300;
+    ctx.fillRect(sx, sy, 1, 1);
+  }
+
+  // Ground
+  ctx.fillStyle = '#2a2a1a';
+  ctx.fillRect(0, 430, canvas.width, 70);
+
+  // Ground line
+  ctx.strokeStyle = '#4a4a3a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 430);
+  ctx.lineTo(canvas.width, 430);
+  ctx.stroke();
+
+  // Floor tiles
+  ctx.strokeStyle = '#333320';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 430);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+
+  // "TRAINING ROOM" sign
+  ctx.fillStyle = '#666';
+  ctx.font = '16px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText('== TRAINING ROOM ==', 400, 25);
+}
+
+function drawControls() {
+  ctx.fillStyle = '#444';
+  ctx.font = '11px Courier New';
+  ctx.textAlign = 'left';
+  const y = canvas.height - 10;
+  ctx.fillText('J=Punch  K=Kick  L=FlyKick  I=Uppercut  U=Palm  W=Jump  AD=Move', 10, y);
+}
+
+// ===== GAME LOOP =====
+function gameLoop(timestamp) {
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+
+  if (dt > 100) { // skip big gaps
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  updatePlayer(dt);
+  updateAnim(dt);
+  updateDummy(dt);
+
+  // Clear & draw
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+  drawDummy();
+  drawPlayer();
+  drawControls();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+  player.x = 200;
+  player.y = 350;
+  player.vx = 0;
+  player.vy = 0;
+  player.facing = 1;
+  player.attacking = false;
+  startAnim('McIdle');
+
+  dummy.hp = dummy.maxHp;
+  dummy.hitTimer = 0;
+  dummy.shakeX = 0;
+  dummy.recovering = false;
+  dummy.recoverTimer = 0;
+
+  hitCount = 0;
+  comboCount = 0;
+  comboTimer = 0;
+
+  document.getElementById('hit-count').textContent = '0';
+  document.getElementById('dummy-hp').textContent = '100';
+  document.getElementById('combo').classList.remove('show');
+}
+</script>
+</body>
+</html>
