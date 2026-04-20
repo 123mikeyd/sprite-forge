@@ -46,12 +46,12 @@
           39
         ]
       ],
-      "fps": 8,
+      "fps": 10,
       "loop": false,
       "frame_data": {
-        "startup": 2,
-        "active": 2,
-        "recovery": 2
+        "startup": 10,
+        "active": 0,
+        "recovery": 15
       },
       "state_id": 1000
     },
@@ -90,7 +90,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 1010
+      "state_id": 1010,
+      "frame_data": {
+        "startup": 5,
+        "active": 8,
+        "recovery": 12
+      }
     },
     "McSpinningUpperCutt": {
       "frames": [
@@ -137,9 +142,14 @@
           41
         ]
       ],
-      "fps": 8,
+      "fps": 10,
       "loop": false,
-      "state_id": 1010
+      "state_id": 1010,
+      "frame_data": {
+        "startup": 4,
+        "active": 10,
+        "recovery": 14
+      }
     },
     "McJumpKick": {
       "frames": [
@@ -200,7 +210,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 630
+      "state_id": 630,
+      "frame_data": {
+        "startup": 3,
+        "active": 6,
+        "recovery": 6
+      }
     },
     "LeftPunch": {
       "frames": [
@@ -225,7 +240,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 200
+      "state_id": 200,
+      "frame_data": {
+        "startup": 3,
+        "active": 3,
+        "recovery": 4
+      }
     },
     "McPalmThrust": {
       "frames": [
@@ -254,9 +274,14 @@
           39
         ]
       ],
-      "fps": 8,
+      "fps": 10,
       "loop": false,
-      "state_id": 1020
+      "state_id": 1020,
+      "frame_data": {
+        "startup": 6,
+        "active": 6,
+        "recovery": 10
+      }
     },
     "McKnockout": {
       "frames": [
@@ -285,7 +310,7 @@
           42
         ]
       ],
-      "fps": 8,
+      "fps": 10,
       "loop": false,
       "state_id": 5000
     },
@@ -335,8 +360,8 @@
           41
         ]
       ],
-      "fps": 8,
-      "loop": false,
+      "fps": 6,
+      "loop": true,
       "state_id": 0
     },
     "RightPunch": {
@@ -362,7 +387,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 210
+      "state_id": 210,
+      "frame_data": {
+        "startup": 4,
+        "active": 3,
+        "recovery": 5
+      }
     },
     "McFlyKick": {
       "frames": [
@@ -405,7 +435,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 630
+      "state_id": 630,
+      "frame_data": {
+        "startup": 3,
+        "active": 8,
+        "recovery": 8
+      }
     },
     "McWalking": {
       "frames": [
@@ -434,8 +469,8 @@
           39
         ]
       ],
-      "fps": 8,
-      "loop": false,
+      "fps": 10,
+      "loop": true,
       "state_id": 20
     },
     "FrontKick": {
@@ -461,7 +496,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 230
+      "state_id": 230,
+      "frame_data": {
+        "startup": 4,
+        "active": 3,
+        "recovery": 5
+      }
     },
     "LowKick": {
       "frames": [
@@ -486,7 +526,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 240
+      "state_id": 240,
+      "frame_data": {
+        "startup": 3,
+        "active": 3,
+        "recovery": 5
+      }
     },
     "HighKick": {
       "frames": [
@@ -511,7 +556,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 250
+      "state_id": 250,
+      "frame_data": {
+        "startup": 5,
+        "active": 4,
+        "recovery": 6
+      }
     },
     "AxeKick": {
       "frames": [
@@ -542,7 +592,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 260
+      "state_id": 260,
+      "frame_data": {
+        "startup": 6,
+        "active": 5,
+        "recovery": 7
+      }
     },
     "Jump": {
       "frames": [
@@ -610,7 +665,12 @@
       ],
       "fps": 10,
       "loop": false,
-      "state_id": 220
+      "state_id": 220,
+      "frame_data": {
+        "startup": 5,
+        "active": 4,
+        "recovery": 6
+      }
     }
   },
   "meta": {
