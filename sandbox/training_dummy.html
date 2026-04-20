@@ -16,11 +16,7 @@
     color: #0f0;
     overflow: hidden;
   }
-  canvas {
-    border: 2px solid #333;
-    image-rendering: pixelated;
-    background: #1a1a2e;
-  }
+  canvas { border: 2px solid #333; image-rendering: pixelated; background: #1a1a2e; }
   #hud {
     display: flex;
     justify-content: space-between;
@@ -41,8 +37,8 @@
   #combo.show { opacity: 1; }
   #hit-splash {
     position: fixed;
-    top: 50%;
-    left: 50%;
+    top: 40%;
+    left: 65%;
     transform: translate(-50%, -50%);
     font-size: 48px;
     color: #f44;
@@ -50,9 +46,7 @@
     opacity: 0;
     pointer-events: none;
   }
-  #hit-splash.show {
-    animation: splash 0.4s ease-out forwards;
-  }
+  #hit-splash.show { animation: splash 0.4s ease-out forwards; }
   @keyframes splash {
     0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
     100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
@@ -62,7 +56,15 @@
     color: #888;
     margin-top: 8px;
     text-align: center;
-    line-height: 1.6;
+    line-height: 1.8;
+  }
+  #chain-display {
+    position: fixed;
+    top: 110px;
+    left: 20px;
+    font-size: 16px;
+    color: #0ff;
+    text-shadow: 1px 1px #000;
   }
 </style>
 </head>
@@ -72,6 +74,7 @@
   <span>HITS: <span id="hit-count">0</span></span>
   <span>MOVE: <span id="current-move">idle</span></span>
   <span>STATE: <span id="state-id">0</span></span>
+  <span>COMBO: <span id="combo-step">-</span></span>
   <span>DUMMY HP: <span id="dummy-hp">100</span></span>
 </div>
 
@@ -79,105 +82,115 @@
 
 <div id="combo"></div>
 <div id="hit-splash"></div>
+<div id="chain-display"></div>
 
 <div id="controls">
-  [A/D] Walk &nbsp;|&nbsp; [W] Jump &nbsp;|&nbsp; [J] Left Punch &nbsp;|&nbsp; [K] Right Punch
-  &nbsp;|&nbsp; [L] Front Kick &nbsp;|&nbsp; [I] Uppercut &nbsp;|&nbsp; [U] Palm Thrust
-  &nbsp;|&nbsp; [O] Fireball &nbsp;|&nbsp; [H] Fly Kick &nbsp;|&nbsp; [SPACE] Reset
+  [J] x3 = Punch Chain (LP -> RP -> Finish) &nbsp;|&nbsp; [K] x3 = Kick Chain (FK -> LK -> HK)
+  &nbsp;|&nbsp; [J][J][K] = Punch-Punch-Kick Combo<br>
+  [O] Fireball &nbsp;|&nbsp; [I] Uppercut &nbsp;|&nbsp; [U] Palm Thrust &nbsp;|&nbsp; [L] Spin Uppercut
+  &nbsp;|&nbsp; [H] Fly Kick &nbsp;|&nbsp; [W] Jump &nbsp;|&nbsp; [A/D] Walk &nbsp;|&nbsp; [SPACE] Reset
 </div>
 
 <script>
-// ===== ALL 13 ANIMATIONS WITH MUGEN STATE_IDS =====
+// ===== 18 ANIMATIONS =====
 const ANIMS = {
   McIdle: {
     frames: [[9,5,28,40],[259,5,27,40],[59,104,28,41]],
-    fps: 10, loop: true, state_id: 0,
-    label: 'IDLE'
+    fps: 4, loop: true, state_id: 0, label: 'IDLE'
   },
   McWalking: {
     frames: [[160,5,27,40],[209,5,28,40],[9,5,28,40],[461,256,29,39]],
-    fps: 10, loop: true, state_id: 20,
-    label: 'WALK'
+    fps: 8, loop: true, state_id: 20, label: 'WALK'
+  },
+  Jump: {
+    frames: [[9,206,26,39],[358,206,27,39],[109,256,27,39],[59,5,26,40],[9,5,28,40]],
+    fps: 10, loop: false, state_id: 40, label: 'JUMP'
   },
   LeftPunch: {
     frames: [[259,5,27,40],[307,154,37,42],[358,154,35,42]],
-    fps: 10, loop: false, state_id: 200,
-    label: 'LEFT PUNCH'
+    fps: 10, loop: false, state_id: 200, label: 'LEFT PUNCH'
   },
   RightPunch: {
     frames: [[9,206,26,39],[409,154,33,42],[460,154,31,42]],
-    fps: 10, loop: false, state_id: 210,
-    label: 'RIGHT PUNCH'
+    fps: 10, loop: false, state_id: 210, label: 'RIGHT PUNCH'
+  },
+  Finalkickup: {
+    frames: [[109,256,27,39],[159,256,33,39],[209,256,29,39],[209,5,28,40]],
+    fps: 12, loop: false, state_id: 220, label: 'FINISH'
   },
   FrontKick: {
     frames: [[9,206,26,39],[158,206,35,39],[209,206,34,39]],
-    fps: 10, loop: false, state_id: 230,
-    label: 'FRONT KICK'
+    fps: 10, loop: false, state_id: 230, label: 'FRONT KICK'
+  },
+  LowKick: {
+    frames: [[9,206,26,39],[58,206,34,39],[109,206,33,39]],
+    fps: 10, loop: false, state_id: 240, label: 'LOW KICK'
+  },
+  HighKick: {
+    frames: [[9,206,26,39],[258,206,34,39],[309,206,33,39]],
+    fps: 10, loop: false, state_id: 250, label: 'HIGH KICK'
+  },
+  AxeKick: {
+    frames: [[9,206,26,39],[358,206,27,39],[406,206,27,39],[458,206,32,39]],
+    fps: 12, loop: false, state_id: 260, label: 'AXE KICK'
   },
   McFlyKick: {
     frames: [[259,5,27,40],[309,5,25,40],[359,5,26,40],[158,206,35,39],[459,5,31,40],[407,5,33,40]],
-    fps: 10, loop: false, state_id: 630,
-    label: 'FLY KICK'
+    fps: 10, loop: false, state_id: 630, label: 'FLY KICK'
   },
   McJumpKick: {
     frames: [[309,5,25,40],[459,104,27,41],[11,154,25,42],[9,206,26,39],[209,206,34,39],[458,206,32,39],[358,206,27,39],[58,206,34,39],[309,56,25,39]],
-    fps: 10, loop: false, state_id: 630,
-    label: 'JUMP KICK'
+    fps: 10, loop: false, state_id: 630, label: 'JUMP KICK'
   },
   McFireBall: {
     frames: [[9,56,26,39],[59,56,26,39],[109,56,26,39],[159,56,27,39],[209,56,46,39],[260,56,45,39]],
-    fps: 10, loop: false, state_id: 1000,
-    label: 'FIREBALL'
+    fps: 8, loop: false, state_id: 1000, label: 'FIREBALL'
   },
   McSpinningUpperCutt: {
     frames: [[109,104,26,41],[159,104,30,41],[210,104,28,41],[260,104,28,41],[312,104,26,41],[359,104,30,41],[412,104,26,41]],
-    fps: 10, loop: false, state_id: 1010,
-    label: 'SPIN UPPERCUT'
+    fps: 8, loop: false, state_id: 1010, label: 'SPIN UPPERCUT'
   },
   McUpperCutt: {
     frames: [[260,256,26,39],[306,256,32,39],[351,256,37,39],[402,256,41,39],[461,256,29,39]],
-    fps: 10, loop: false, state_id: 1010,
-    label: 'UPPERCUT'
+    fps: 10, loop: false, state_id: 1010, label: 'UPPERCUT'
   },
   McPalmThrust: {
     frames: [[109,256,27,39],[209,256,29,39],[57,256,36,39],[7,256,36,39]],
-    fps: 10, loop: false, state_id: 1020,
-    label: 'PALM THRUST'
+    fps: 8, loop: false, state_id: 1020, label: 'PALM THRUST'
   },
   McKnockout: {
     frames: [[109,206,33,39],[51,154,39,42],[150,154,39,42],[96,154,43,42]],
-    fps: 10, loop: false, state_id: 5000,
-    label: 'KNOCKOUT'
+    fps: 8, loop: false, state_id: 5000, label: 'KNOCKOUT'
   },
   McGetUp: {
     frames: [[200,154,39,42],[261,154,27,42],[359,5,26,40]],
-    fps: 8, loop: false, state_id: 5020,
-    label: 'GET UP'
+    fps: 8, loop: false, state_id: 5020, label: 'GET UP'
   }
 };
 
-// Input -> animation mapping
-const ATTACK_MAP = {
-  j: 'LeftPunch',
-  k: 'RightPunch',
-  l: 'FrontKick',
-  i: 'McUpperCutt',
-  u: 'McPalmThrust',
-  o: 'McFireBall',
-  h: 'McFlyKick'
+// ===== COMBO SYSTEM =====
+const COMBOS = {
+  // J chain: LP -> RP -> Finish
+  punch: ['LeftPunch', 'RightPunch', 'Finalkickup'],
+  // K chain: FK -> LK -> HK
+  kick: ['FrontKick', 'LowKick', 'HighKick'],
 };
 
-// Hit window per animation (start frame, end frame, damage)
+// Hit windows and damage per animation
 const HIT_DATA = {
-  LeftPunch:          { start: 1, end: 1, dmg: 6  },
-  RightPunch:         { start: 1, end: 1, dmg: 8  },
-  FrontKick:          { start: 1, end: 2, dmg: 10 },
-  McFlyKick:          { start: 2, end: 4, dmg: 12 },
-  McJumpKick:         { start: 4, end: 5, dmg: 10 },
-  McFireBall:         { start: 3, end: 5, dmg: 14 },
-  McUpperCutt:        { start: 2, end: 3, dmg: 18 },
-  McSpinningUpperCutt:{ start: 2, end: 5, dmg: 20 },
-  McPalmThrust:       { start: 2, end: 3, dmg: 7  }
+  LeftPunch:     { start: 1, end: 1, dmg: 5  },
+  RightPunch:    { start: 1, end: 1, dmg: 7  },
+  Finalkickup:   { start: 1, end: 2, dmg: 12 },
+  FrontKick:     { start: 1, end: 2, dmg: 8  },
+  LowKick:       { start: 1, end: 2, dmg: 7  },
+  HighKick:      { start: 1, end: 2, dmg: 9  },
+  AxeKick:       { start: 1, end: 3, dmg: 15 },
+  McFlyKick:     { start: 2, end: 4, dmg: 12 },
+  McJumpKick:    { start: 4, end: 5, dmg: 10 },
+  McFireBall:    { start: 3, end: 5, dmg: 14 },
+  McUpperCutt:   { start: 2, end: 3, dmg: 18 },
+  McSpinningUpperCutt: { start: 2, end: 5, dmg: 20 },
+  McPalmThrust:  { start: 2, end: 3, dmg: 7  },
 };
 
 // ===== GAME STATE =====
@@ -195,7 +208,13 @@ const player = {
   grounded: true,
   attacking: false,
   attackLanded: false,
-  scale: 3
+  _fbSpawned: false,
+  scale: 3,
+  // Combo state
+  comboChain: null,    // 'punch' or 'kick'
+  comboStep: 0,        // which step in the chain
+  comboTimer: 0,       // ms to press next button
+  lastInput: null       // for PP+K detection
 };
 
 const dummy = {
@@ -211,10 +230,7 @@ let projectiles = [];
 
 // ===== LOAD SPRITE =====
 const img = new Image();
-img.onload = () => {
-  spriteSheet = img;
-  requestAnimationFrame(gameLoop);
-};
+img.onload = () => { spriteSheet = img; requestAnimationFrame(gameLoop); };
 img.onerror = () => {
   const img2 = new Image();
   img2.onload = () => { spriteSheet = img2; requestAnimationFrame(gameLoop); };
@@ -225,22 +241,66 @@ img.src = '../../test_sprites/cat_fighter.png';
 // ===== INPUT =====
 document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
+  if (keys[key]) return; // prevent repeat
   keys[key] = true;
 
-  if (!player.attacking && ATTACK_MAP[key]) {
-    startAnim(ATTACK_MAP[key]);
-    player.attacking = true;
-    player.attackLanded = false;
+  // Specials (standalone, override everything)
+  const specials = {
+    o: 'McFireBall',
+    i: 'McUpperCutt',
+    u: 'McPalmThrust',
+    l: 'McSpinningUpperCutt',
+    h: null // fly kick handled below
+  };
+
+  if (specials[key] !== undefined && key !== 'h') {
+    if (specials[key]) {
+      startAnim(specials[key]);
+      player.attacking = true;
+      player.attackLanded = false;
+      player._fbSpawned = false;
+      resetCombo();
+    }
+    return;
   }
 
+  // Jump
   if (key === 'w' && player.grounded) {
     player.vy = -12;
     player.grounded = false;
     if (!player.attacking) {
-      startAnim('McJumpKick');
+      startAnim('Jump');
+    }
+    return;
+  }
+
+  // Air kick
+  if (key === 'h' && !player.grounded && !player.attacking) {
+    startAnim('McFlyKick');
+    player.attacking = true;
+    player.attackLanded = false;
+    return;
+  }
+
+  // Punch combo (J)
+  if (key === 'j' && player.grounded) {
+    handleComboInput('punch');
+    return;
+  }
+
+  // Kick combo (K)
+  if (key === 'k' && player.grounded) {
+    // Check for PP+K combo: if we're on step 2 of punch chain, do AxeKick
+    if (player.comboChain === 'punch' && player.comboStep === 2 && player.comboTimer > 0) {
+      startAnim('AxeKick');
       player.attacking = true;
       player.attackLanded = false;
+      player.comboStep = 3; // mark as finished
+      updateComboDisplay();
+      return;
     }
+    handleComboInput('kick');
+    return;
   }
 
   if (e.key === ' ') resetGame();
@@ -248,10 +308,58 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
+function handleComboInput(chainType) {
+  const chain = COMBOS[chainType];
+
+  if (player.attacking && player.comboChain === chainType && player.comboTimer > 0) {
+    // Continue combo
+    player.comboStep++;
+    if (player.comboStep < chain.length) {
+      startAnim(chain[player.comboStep]);
+      player.attackLanded = false;
+      player.comboTimer = 600; // window for next input
+      player.animAcc = 0; // restart timing
+    }
+  } else if (!player.attacking) {
+    // Start new combo
+    player.comboChain = chainType;
+    player.comboStep = 0;
+    startAnim(chain[0]);
+    player.attacking = true;
+    player.attackLanded = false;
+    player.comboTimer = 600;
+  }
+  updateComboDisplay();
+}
+
+function resetCombo() {
+  player.comboChain = null;
+  player.comboStep = 0;
+  player.comboTimer = 0;
+  updateComboDisplay();
+}
+
+function updateComboDisplay() {
+  const el = document.getElementById('combo-step');
+  if (player.comboChain && player.comboTimer > 0) {
+    const chain = COMBOS[player.comboChain];
+    const names = player.comboChain === 'punch'
+      ? ['LP', 'RP', 'FIN']
+      : ['FK', 'LK', 'HK'];
+    const step = Math.min(player.comboStep, chain.length - 1);
+    let display = names.slice(0, step + 1).join(' > ');
+    if (player.comboStep === 2 && player.comboChain === 'punch') {
+      display += ' (+K=Axe!)';
+    }
+    el.textContent = display;
+  } else {
+    el.textContent = '-';
+  }
+}
+
 // ===== ANIMATION =====
 function startAnim(name) {
   if (!ANIMS[name]) return;
-  if (player.anim === name && ANIMS[name].loop) return;
   player.anim = name;
   player.animIdx = 0;
   player.animAcc = 0;
@@ -264,6 +372,14 @@ function updateAnim(dt) {
   const anim = ANIMS[player.anim];
   if (!anim) return;
 
+  // Combo timer countdown
+  if (player.comboTimer > 0) {
+    player.comboTimer -= dt;
+    if (player.comboTimer <= 0) {
+      resetCombo();
+    }
+  }
+
   player.animAcc += dt;
   const msPerFrame = 1000 / anim.fps;
 
@@ -271,7 +387,7 @@ function updateAnim(dt) {
     player.animAcc -= msPerFrame;
     player.animIdx++;
 
-    // Hit detection on attack frames
+    // Hit detection
     if (player.attacking && !player.attackLanded) {
       const hd = HIT_DATA[player.anim];
       if (hd && player.animIdx >= hd.start && player.animIdx <= hd.end) {
@@ -282,7 +398,7 @@ function updateAnim(dt) {
       }
     }
 
-    // Fireball projectile
+    // Fireball spawn
     if (player.anim === 'McFireBall' && player.animIdx === 4 && !player._fbSpawned) {
       player._fbSpawned = true;
       spawnFireball();
@@ -293,10 +409,15 @@ function updateAnim(dt) {
         player.animIdx = 0;
       } else {
         player.animIdx = anim.frames.length - 1;
-        player.attacking = false;
-        player._fbSpawned = false;
-        if (!keys['a'] && !keys['d']) startAnim('McIdle');
-        else startAnim('McWalking');
+        // Don't end attack if combo window is still open
+        if (player.comboTimer <= 0 || !player.comboChain) {
+          player.attacking = false;
+          player._fbSpawned = false;
+          resetCombo();
+          if (!keys['a'] && !keys['d']) startAnim('McIdle');
+          else startAnim('McWalking');
+        }
+        // If combo window still open, freeze on last frame waiting for input
       }
     }
   }
@@ -314,22 +435,17 @@ function spawnFireball() {
   });
 }
 
-function updateProjectiles(dt) {
+function updateProjectiles() {
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i];
     p.x += p.vx;
     p.life--;
-
-    // Hit dummy
     const dx = dummy.x + dummy.shakeX;
     if (p.x > dx && p.x < dx + 90 && p.y > dummy.y && p.y < dummy.y + 135) {
       applyHit(14);
       p.life = 0;
     }
-
-    if (p.life <= 0 || p.x < 0 || p.x > 800) {
-      projectiles.splice(i, 1);
-    }
+    if (p.life <= 0 || p.x < 0 || p.x > 800) projectiles.splice(i, 1);
   }
 }
 
@@ -353,30 +469,23 @@ function drawProjectiles() {
 // ===== HIT DETECTION =====
 function checkHit() {
   const anim = ANIMS[player.anim];
-  const frame = anim.frames[player.animIdx];
+  const frame = anim.frames[Math.min(player.animIdx, anim.frames.length - 1)];
   const pw = frame[2] * player.scale;
   const ph = frame[3] * player.scale;
-
   const px = player.facing > 0 ? player.x + pw * 0.3 : player.x - pw * 0.3;
   const py = player.y;
-
   const dx = dummy.x + dummy.shakeX;
   const dy = dummy.y;
-  const dw = 30 * 3;
-  const dh = 45 * 3;
-
-  return (px + pw > dx && px < dx + dw && py + ph > dy && py < dy + dh);
+  return (px + pw > dx && px < dx + 90 && py + ph > dy && py < dy + 135);
 }
 
 function applyHit(dmg) {
   dummy.hp = Math.max(0, dummy.hp - dmg);
   dummy.hitTimer = 300;
   dummy.shakeX = player.facing > 0 ? 15 : -15;
-
   hitCount++;
   comboCount++;
   comboTimer = 1500;
-
   document.getElementById('hit-count').textContent = hitCount;
   document.getElementById('dummy-hp').textContent = Math.round(dummy.hp);
 
@@ -402,7 +511,6 @@ function applyHit(dmg) {
 // ===== PHYSICS =====
 function updatePlayer(dt) {
   const speed = 4;
-
   if (player.grounded && !player.attacking) {
     if (keys['a']) {
       player.vx = -speed;
@@ -417,23 +525,20 @@ function updatePlayer(dt) {
       startAnim('McIdle');
     }
   }
-
   if (!player.grounded) player.vy += 0.6;
-
   player.x += player.vx;
   player.y += player.vy;
-
   if (player.y >= 350) {
     player.y = 350;
     player.vy = 0;
     player.grounded = true;
-    if (player.anim === 'McJumpKick' || player.anim === 'McFlyKick' || player.anim === 'McSpinningUpperCutt') {
+    if (['Jump','McJumpKick','McFlyKick','McSpinningUpperCutt'].includes(player.anim)) {
       player.attacking = false;
       player._fbSpawned = false;
+      resetCombo();
       startAnim('McIdle');
     }
   }
-
   player.x = Math.max(50, Math.min(700, player.x));
 }
 
@@ -443,7 +548,6 @@ function updateDummy(dt) {
     dummy.shakeX *= 0.85;
     if (dummy.hitTimer <= 0) dummy.shakeX = 0;
   }
-
   if (dummy.recovering) {
     dummy.recoverTimer -= dt;
     if (dummy.recoverTimer <= 0) {
@@ -452,7 +556,6 @@ function updateDummy(dt) {
       document.getElementById('dummy-hp').textContent = dummy.hp;
     }
   }
-
   if (comboTimer > 0) {
     comboTimer -= dt;
     if (comboTimer <= 0) {
@@ -469,7 +572,6 @@ function drawPlayer() {
   const frame = anim.frames[Math.min(player.animIdx, anim.frames.length - 1)];
   const [sx, sy, sw, sh] = frame;
   const s = player.scale;
-
   ctx.save();
   if (player.facing < 0) {
     ctx.translate(player.x + sw * s, player.y);
@@ -486,28 +588,20 @@ function drawDummy() {
   const dy = dummy.y;
   const s = 3;
   const hpRatio = dummy.hp / dummy.maxHp;
-
   ctx.save();
-
   if (dummy.recovering) {
     ctx.translate(dx + 30 * s / 2, dy + 45 * s);
     ctx.rotate(Math.PI / 2.5);
     ctx.translate(-30 * s / 2, -45 * s);
   }
-
-  // Post
   ctx.fillStyle = '#8B6914';
   ctx.fillRect(dx + 12 * s, dy + 15 * s, 6 * s, 30 * s);
-  // Arms
   ctx.fillStyle = '#A0782C';
   ctx.fillRect(dx + 2 * s, dy + 18 * s, 26 * s, 5 * s);
-  // Head
   ctx.fillStyle = '#C4943C';
   ctx.beginPath();
   ctx.arc(dx + 15 * s, dy + 10 * s, 10 * s, 0, Math.PI * 2);
   ctx.fill();
-
-  // Eyes
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 2;
   if (dummy.hitTimer > 0) {
@@ -526,8 +620,6 @@ function drawDummy() {
     ctx.arc(dx + 20 * s, dy + 8 * s, 2 * s, 0, Math.PI * 2);
     ctx.fill();
   }
-
-  // Mouth
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -538,25 +630,19 @@ function drawDummy() {
     ctx.lineTo(dx + 20 * s, dy + 14 * s);
   }
   ctx.stroke();
-
-  // Straw
   ctx.strokeStyle = '#DAA520';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(dx + 12 * s, dy);
   ctx.lineTo(dx + 20 * s, dy - 8 * s);
   ctx.stroke();
-
-  // Rope
   ctx.strokeStyle = '#654321';
   ctx.beginPath();
   ctx.moveTo(dx + 10 * s, dy + 25 * s);
   ctx.lineTo(dx + 20 * s, dy + 25 * s);
   ctx.stroke();
-
   ctx.restore();
 
-  // HP bar
   const barW = 80, barH = 8;
   const barX = dx + 15 * s - barW / 2;
   const barY = dy - 20;
@@ -566,7 +652,6 @@ function drawDummy() {
   ctx.fillRect(barX + 1, barY + 1, (barW - 2) * hpRatio, barH - 2);
   ctx.strokeStyle = '#666';
   ctx.strokeRect(barX, barY, barW, barH);
-
   ctx.fillStyle = '#aaa';
   ctx.font = '12px Courier New';
   ctx.textAlign = 'center';
@@ -579,51 +664,39 @@ function drawBackground() {
   grad.addColorStop(1, '#1a1a3e');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.fillStyle = '#fff';
   for (let i = 0; i < 50; i++) {
     ctx.fillRect((i * 137 + 42) % 800, (i * 89 + 17) % 300, 1, 1);
   }
-
   ctx.fillStyle = '#2a2a1a';
   ctx.fillRect(0, 430, canvas.width, 70);
   ctx.strokeStyle = '#4a4a3a';
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0, 430); ctx.lineTo(canvas.width, 430); ctx.stroke();
-
   ctx.strokeStyle = '#333320';
   ctx.lineWidth = 1;
   for (let x = 0; x < canvas.width; x += 60) {
     ctx.beginPath(); ctx.moveTo(x, 430); ctx.lineTo(x, canvas.height); ctx.stroke();
   }
-
   ctx.fillStyle = '#666';
   ctx.font = '16px Courier New';
   ctx.textAlign = 'center';
   ctx.fillText('== TRAINING ROOM ==', 400, 25);
-
-  ctx.fillStyle = '#444';
-  ctx.font = '11px Courier New';
-  ctx.textAlign = 'left';
-  ctx.fillText('J=LP  K=RP  L=FK  I=Upp  U=Palm  O=Fireball  H=FlyKick  W=Jump  AD=Walk', 10, canvas.height - 10);
 }
 
 // ===== GAME LOOP =====
 function gameLoop(timestamp) {
   const dt = Math.min(timestamp - lastTime, 100);
   lastTime = timestamp;
-
   updatePlayer(dt);
   updateAnim(dt);
   updateDummy(dt);
-  updateProjectiles(dt);
-
+  updateProjectiles();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
   drawDummy();
   drawProjectiles();
   drawPlayer();
-
   requestAnimationFrame(gameLoop);
 }
 
@@ -632,13 +705,12 @@ function resetGame() {
   player.vx = 0; player.vy = 0;
   player.facing = 1; player.attacking = false;
   player.attackLanded = false; player._fbSpawned = false;
+  resetCombo();
   projectiles = [];
   startAnim('McIdle');
-
   dummy.hp = dummy.maxHp;
   dummy.hitTimer = 0; dummy.shakeX = 0;
   dummy.recovering = false; dummy.recoverTimer = 0;
-
   hitCount = 0; comboCount = 0; comboTimer = 0;
   document.getElementById('hit-count').textContent = '0';
   document.getElementById('dummy-hp').textContent = '100';

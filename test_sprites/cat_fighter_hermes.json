@@ -46,8 +46,13 @@
           39
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
+      "frame_data": {
+        "startup": 2,
+        "active": 2,
+        "recovery": 2
+      },
       "state_id": 1000
     },
     "McUpperCutt": {
@@ -84,7 +89,7 @@
         ]
       ],
       "fps": 10,
-      "loop": true,
+      "loop": false,
       "state_id": 1010
     },
     "McSpinningUpperCutt": {
@@ -132,8 +137,8 @@
           41
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
       "state_id": 1010
     },
     "McJumpKick": {
@@ -194,7 +199,7 @@
         ]
       ],
       "fps": 10,
-      "loop": true,
+      "loop": false,
       "state_id": 630
     },
     "LeftPunch": {
@@ -219,7 +224,7 @@
         ]
       ],
       "fps": 10,
-      "loop": true,
+      "loop": false,
       "state_id": 200
     },
     "McPalmThrust": {
@@ -249,8 +254,8 @@
           39
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
       "state_id": 1020
     },
     "McKnockout": {
@@ -280,8 +285,8 @@
           42
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
       "state_id": 5000
     },
     "McGetUp": {
@@ -305,8 +310,8 @@
           40
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
       "state_id": 5020
     },
     "McIdle": {
@@ -330,8 +335,8 @@
           41
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
       "state_id": 0
     },
     "RightPunch": {
@@ -356,7 +361,7 @@
         ]
       ],
       "fps": 10,
-      "loop": true,
+      "loop": false,
       "state_id": 210
     },
     "McFlyKick": {
@@ -399,7 +404,7 @@
         ]
       ],
       "fps": 10,
-      "loop": true,
+      "loop": false,
       "state_id": 630
     },
     "McWalking": {
@@ -429,8 +434,8 @@
           39
         ]
       ],
-      "fps": 10,
-      "loop": true,
+      "fps": 8,
+      "loop": false,
       "state_id": 20
     },
     "FrontKick": {
@@ -455,12 +460,161 @@
         ]
       ],
       "fps": 10,
-      "loop": true,
+      "loop": false,
       "state_id": 230
+    },
+    "LowKick": {
+      "frames": [
+        [
+          9,
+          206,
+          26,
+          39
+        ],
+        [
+          58,
+          206,
+          34,
+          39
+        ],
+        [
+          109,
+          206,
+          33,
+          39
+        ]
+      ],
+      "fps": 10,
+      "loop": false,
+      "state_id": 240
+    },
+    "HighKick": {
+      "frames": [
+        [
+          9,
+          206,
+          26,
+          39
+        ],
+        [
+          258,
+          206,
+          34,
+          39
+        ],
+        [
+          309,
+          206,
+          33,
+          39
+        ]
+      ],
+      "fps": 10,
+      "loop": false,
+      "state_id": 250
+    },
+    "AxeKick": {
+      "frames": [
+        [
+          9,
+          206,
+          26,
+          39
+        ],
+        [
+          358,
+          206,
+          27,
+          39
+        ],
+        [
+          406,
+          206,
+          27,
+          39
+        ],
+        [
+          458,
+          206,
+          32,
+          39
+        ]
+      ],
+      "fps": 10,
+      "loop": false,
+      "state_id": 260
+    },
+    "Jump": {
+      "frames": [
+        [
+          9,
+          206,
+          26,
+          39
+        ],
+        [
+          358,
+          206,
+          27,
+          39
+        ],
+        [
+          109,
+          256,
+          27,
+          39
+        ],
+        [
+          59,
+          5,
+          26,
+          40
+        ],
+        [
+          9,
+          5,
+          28,
+          40
+        ]
+      ],
+      "fps": 10,
+      "loop": false,
+      "state_id": 40
+    },
+    "Finalkickup": {
+      "frames": [
+        [
+          109,
+          256,
+          27,
+          39
+        ],
+        [
+          159,
+          256,
+          33,
+          39
+        ],
+        [
+          209,
+          256,
+          29,
+          39
+        ],
+        [
+          209,
+          5,
+          28,
+          40
+        ]
+      ],
+      "fps": 10,
+      "loop": false,
+      "state_id": 220
     }
   },
   "meta": {
     "source": "curator",
-    "n_animations": 13
+    "n_animations": 18
   }
 }
