@@ -9,74 +9,88 @@ to produce assets any Hermes Agent-generated 2D game can load directly.
   [character idea]  or  [existing sheet PNG]
           │
           ▼
-  src/generator.py        ← create per-animation strips
-    - backend: image_gen  (caller's image tool)
-    - backend: ascii      (local pyfiglet, retro, no API)
-    - backend: fal        (stub until credits added)
+  sprite-forge.py forge <sheet>     ← one command, full pipeline
+          │
+          ├─ Step 1: analyzer.py    ← detect frames + quality
+          ├─ Step 2: normalizer.py  ← align frames to groin anchor
+          ├─ Step 3: reviewer.py    ← generate HTML review tool
           │
           ▼
-  src/analyzer.py         ← detect frames + quality per strip or sheet
+  user opens review.html            ← mark frames good/bad, assign anims
           │
           ▼
-  src/assembler.py        ← stitch strips OR re-export analyzer JSON
+  sprite-forge.py import <sheet> review.json  → final hermes.json
+          │                    (or)
+          ▼
+  regenerator.py execute review.json <sheet>  → regen bad, keep good
           │
           ▼
-  hermes.json (v1)        ← Hermes-consumer format
+  hermes.json (v1)                  ← Hermes-consumer format
           │
           ▼
-  any Hermes game         ← ~60 lines of JS loads and animates
+  any Hermes game                   ← ~60 lines of JS loads and animates
 ```
 
 ## Quick start — from a sheet you already have
 
 ```bash
-# 1. Analyze: find frames, detect background, emit analyzer.json
-python3 src/analyzer.py path/to/sheet.png -o sheet_frames.json
+# ONE COMMAND does everything:
+python3 sprite-forge.py forge my_fighter.png -o output/
 
-# 2. Publish as Hermes-consumer JSON (one animation per detected row)
-python3 src/assembler.py from-analyzer \
-    --analyzer-json sheet_frames.json \
-    --sheet path/to/sheet.png \
-    --out sheet_hermes.json \
-    --by-row \
-    --row-names idle walk run punch kick stand
+# This runs: analyze → normalize → review
+# Open output/my_fighter_review.html in your browser
+# Mark frames good/bad, click "Export Review" → downloads review.json
 
-# 3. Drop both PNG and sheet_hermes.json in your game's assets/.
-#    Copy sandbox/demo_game.html's <script> block into your game.
-#    Done.
+# Then produce the final game-ready asset:
+python3 sprite-forge.py import my_fighter.png review.json -o output/final/
+
+# OR regenerate bad frames first, then assemble:
+python3 src/regenerator.py execute review.json my_fighter.png \
+    --out-dir output/regen/ --backend ascii --character "my fighter"
 ```
 
 ## Quick start — generate a new character from scratch
 
-```python
-from generator import generate_sheet_from_template
+```bash
+# Generate a fighter using ASCII backend (free, retro aesthetic):
+python3 sprite-forge.py generate \
+    --character "red armored knight" \
+    --template templates/fighter.json \
+    --set min_viable_set \
+    --backend ascii \
+    -o output/red_knight/
 
-# You pass an image-generation callable. Hermes's built-in
-# `image_generate` tool satisfies the contract:
-#   (prompt: str, **kwargs) -> path_to_generated_png
+# Or a platformer character:
+python3 sprite-forge.py generate \
+    --character "forest elf archer" \
+    --template templates/platformer.json \
+    --set min_viable_set \
+    --backend ascii \
+    -o output/elf_archer/
 
-def my_gen(prompt, aspect_ratio='landscape'):
-    return hermes_image_generate(prompt=prompt, aspect_ratio=aspect_ratio)
+# Or a shmup ship:
+python3 sprite-forge.py generate \
+    --character "golden starfighter" \
+    --template templates/shmup.json \
+    --set min_viable_set \
+    --backend ascii \
+    -o output/starfighter/
+```
 
-manifest = generate_sheet_from_template(
-    template_path='templates/fighter.json',
-    out_dir='generated/nova_fighter',
-    animation_set='min_viable_set',  # 21 states, ~80-120 frames
-    backend='image_gen',
-    image_gen_callable=my_gen,
-    character_desc='Nova, dark-haired anime girl in neon-blue club attire',
-    style_desc='crisp 2D sprite art, saturated colors, clean silhouette',
-    cell_w=96,
-    cell_h=96,
-)
+## CLI reference
 
-# Then assemble all the strips into one sheet + Hermes JSON
-from assembler import assemble_from_strips
-result = assemble_from_strips(
-    generator_manifest=manifest,
-    out_sheet='generated/nova_fighter/sheet.png',
-    out_json='generated/nova_fighter/hermes.json',
-)
+```
+sprite-forge.py <command> [options]
+
+Commands:
+  analyze <sheet>              Detect frames + quality in a sprite sheet
+  review <analyzer.json> <sheet>  Generate HTML review tool
+  normalize <sheet>            Align frames to consistent anchor point
+  assemble <analyzer.json> <sheet>  Build final sheet + Hermes JSON
+  forge <sheet>                Full pipeline: analyze → normalize → review
+  import <sheet> <review.json>  Apply review → final hermes.json
+  generate --character <desc>  Generate from template (fighter/platformer/shmup)
+  regen <review.json> <sheet>  Re-generate only bad frames
 ```
 
 ## ASCII mode — when you just want to see it work
@@ -92,9 +106,6 @@ python3 src/generator.py strip \
     --frames 4 \
     --character "CAT"
 ```
-
-The strip writes out a PNG with pyfiglet-rendered glyphs on a bright-
-green chroma-key background, ready for analyzer.
 
 ## The Hermes-consumer JSON format (v1)
 
@@ -143,18 +154,57 @@ ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, sw * scale, sh * scale);
 Advance `frameIndex` at `1000 / anim.fps` ms per step, wrap or clamp
 based on `anim.loop`. That's it.
 
-## Preview tool
+## Preview tools
 
-`sandbox/preview.html` loads a sheet + analyzer JSON and shows every
-detected frame in a clickable grid. Shift-click multiple frames, hit
-"Play selection" to flipbook-animate any subset. Also includes row
-preset buttons that select whole rows as candidate animations.
+- `sandbox/preview.html` — interactive frame grid + flipbook
+- `sandbox/curator.html` — browser UI for grouping frames into named animations
+- `sandbox/demo_game.html` — ~60-line consumer demo
+- `sandbox/training_dummy.html` — SF2-style input system + frame data display
 
-Useful for:
-- Visual verification after running analyzer
-- Finding bad splits or missed frames before publishing
-- Testing flipbook timing at different FPS
-- Picking out the exact frame range that belongs to one animation
+## The reviewer (NEW)
+
+`src/reviewer.py` generates a self-contained HTML file. Open it in a browser:
+
+- See every frame cropped from the sheet with quality metrics
+- Click to select frames, Shift+Click to multi-select
+- Press **G** to mark good, **B** to mark bad
+- For bad frames, pick from pre-populated causes (cropped, blurry, wrong anim, etc.)
+- Assign animation names per row
+- Click "Export Review" → downloads `review.json`
+
+The reviewer embeds the sheet image as base64, so it works offline —
+just open the HTML file directly. No server needed.
+
+## The regenerator (NEW)
+
+`src/regenerator.py` consumes `review.json` and keeps good frames while
+regenerating only the rejected ones. Two modes:
+
+```bash
+# Plan mode: see what would be regenerated (dry run)
+python3 src/regenerator.py plan review.json -o regen_plan.json
+
+# Execute mode: generate replacement strips, merge good + new
+python3 src/regenerator.py execute review.json sheet.png \
+    --out-dir regen_output/ --backend ascii --character "CAT"
+```
+
+Strategy: group rejected frames by animation → generate a fresh strip per
+animation → detect frames in new strip → map new frames onto old positions
+→ composite. Good frames from the original are untouched.
+
+## Genre templates
+
+| Template | File | States | Animations |
+|----------|------|--------|------------|
+| 2D Fighter | `templates/fighter.json` | 32+ MUGEN states | idle, walk, 6 attack types, crouch, jump, block, specials, supers |
+| Platformer | `templates/platformer.json` | 12 states | idle, walk, jump rise/peak/fall/land, light/heavy attack, hurt, death, climb, push |
+| Shmup | `templates/shmup.json` | 12 states | idle, bank L/R/up/down, shoot, special, projectile, hit, death, respawn, powerup |
+
+Each template defines:
+- `animation_sets` — min_viable_set (7-12 anims), standard_set, full_set
+- Per-state frame counts, prompts, common_issues, frame_data
+- Timing defaults (FPS per animation type)
 
 ## Legal / licensing
 
@@ -176,40 +226,44 @@ Useful for:
 
 ```
 sprite-forge/
+├── sprite-forge.py               ← MAIN CLI — single entry point
 ├── README.md                     overview + vision
 ├── PIPELINE.md                   this file — end-to-end instructions
 ├── config.example.yaml           API keys config (only needed for fal backend)
 ├── templates/
-│   └── fighter.json              MUGEN-based 32+-state fighter template
+│   ├── fighter.json              MUGEN-based 32+-state fighter template
+│   ├── platformer.json           platformer 12-state template (NEW)
+│   └── shmup.json                shmup 12-state template (NEW)
 ├── src/
-│   ├── analyzer.py               frame detection + quality analysis (606 lines)
-│   ├── generator.py              3-backend strip generator
-│   └── assembler.py              strip stitcher + Hermes JSON writer
+│   ├── analyzer.py               frame detection + quality analysis (658 lines)
+│   ├── generator.py              3-backend strip generator (434 lines)
+│   ├── assembler.py              strip stitcher + Hermes JSON writer (331 lines)
+│   ├── normalizer.py             groin-anchor frame alignment (681 lines) (NEW)
+│   ├── reviewer.py               HTML review tool generator (NEW)
+│   └── regenerator.py            keep-good/regen-bad pipeline (NEW)
 ├── sandbox/
 │   ├── preview.html              interactive frame grid + flipbook
-│   └── demo_game.html            ~60-line consumer demo
+│   ├── curator.html              animation grouping UI
+│   ├── demo_game.html            ~60-line consumer demo
+│   └── training_dummy.html       SF2-style input system
 └── test_sprites/
     ├── ATTRIBUTION.md            CC-BY credits
     └── cat_fighter.png           test corpus (not redistributed)
 ```
 
-## Known gaps (pipeline is NOT yet complete)
+## Verified to work
 
-Things this commit does NOT ship:
-- `reviewer.py` — user-feedback UI for marking frames good/bad
-- `regenerator.py` — regens only the rejected frames, keeping good ones
-- Platformer / RPG / shmup templates (only `fighter.json` exists)
-- Real `fal.ai` backend (stub raises NotImplementedError)
-- Skill entry for other Hermes instances (`consumer.md` in `skills/` —
-  drafted separately)
-
-## Verified to work (on branch `build-pipeline`)
-
-- **analyzer.py:** bug-fixed transparent-bg detection; finds 61/61
-  sprites on the CC-BY cat_fighter test sheet (was 25/61 before fix)
-- **assembler.py from-analyzer --by-row:** produces valid Hermes JSON
-  with 6 named animations
-- **sandbox/demo_game.html:** loads the JSON, animates in browser,
-  HUD shows live frame counter
-- **Full chain end-to-end tested in a headless browser:** all 6 anims
-  play, character renders correctly, walk counter advances
+- **`sprite-forge.py forge`** — full pipeline on cat_fighter: 61 frames
+  detected (60 good, 1 sparse), normalized to groin anchor (X spread 20px,
+  Y spread 10px), HTML review tool generated.
+- **`sprite-forge.py assemble --by-row`** — produces valid Hermes JSON
+  with 6 named animations.
+- **`sprite-forge.py generate`** — generates 7 animation strips from
+  platformer template via ASCII backend, assembles into 626x732 sheet
+  + hermes.json.
+- **`src/regenerator.py plan`** — correctly identifies rejected frames
+  from review.json and groups them by animation with fix instructions.
+- **`sandbox/demo_game.html`** — loads the JSON, animates in browser,
+  HUD shows live frame counter.
+- **`src/normalizer.py`** — groin anchor method: 6px X spread, 3px Y
+  spread on 10-frame Ares test (best of 3 methods tested).

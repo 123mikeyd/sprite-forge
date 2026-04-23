@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "name": "Top-Down Shooter / Shmup Template",
+    "version": "0.1.0",
+    "based_on": "R-Type / Gradius / Touhou / Vampire Survivors conventions",
+    "description": "Animation requirements for a top-down or side-scrolling shooter character/ship. Covers movement, weapons, death, and power-up states.",
+    "sprite_size": "auto",
+    "color_limit": 16,
+    "notes": "Shmup sprites are typically smaller (32x32 to 64x64). The ship/character often stays centered with the world scrolling. Movement animations show tilt/bank rather than walk cycles."
+  },
+
+  "categories": {
+    "movement": {
+      "label": "Movement",
+      "description": "Directional movement with tilt/bank animations",
+      "priority": 1
+    },
+    "weapons": {
+      "label": "Weapons / Shooting",
+      "description": "Firing animations, charge attacks, special weapons",
+      "priority": 1
+    },
+    "effects": {
+      "label": "Effects",
+      "description": "Projectiles, explosions, power-up sparkles",
+      "priority": 2
+    },
+    "reactions": {
+      "label": "Reactions",
+      "description": "Hit flash, death explosion, respawn",
+      "priority": 3
+    },
+    "transformations": {
+      "label": "Transformations",
+      "description": "Power-up forms, weapon upgrades, mode changes",
+      "priority": 4,
+      "customizable": true
+    }
+  },
+
+  "states": [
+    {
+      "id": 0,
+      "name": "idle_center",
+      "label": "Idle / Centered",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 4, "max": 6 },
+      "loop": true,
+      "duration_per_frame": 6,
+      "description": "Default position. Ship/character hovering in place. Engine glow, subtle bob.",
+      "generation_prompt": "idle hover animation, character/ship centered, engine glow pulsing, subtle vertical bob, 4 frames",
+      "common_issues": ["too much movement (should be minimal bob)", "engine glow too bright"]
+    },
+    {
+      "id": 1,
+      "name": "move_left",
+      "label": "Bank Left",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Tilting/banking to the left. Character leans left, maybe trail effect.",
+      "generation_prompt": "banking left animation, character tilting left, slight lean, movement trail, 3 frames",
+      "common_issues": ["character shifts too far horizontally", "looks like rotation not lean"]
+    },
+    {
+      "id": 2,
+      "name": "move_right",
+      "label": "Bank Right",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Tilting/banking to the right. Mirror of bank left.",
+      "generation_prompt": "banking right animation, character tilting right, slight lean, movement trail, 3 frames",
+      "common_issues": ["not a mirror of bank left", "inconsistent lean amount"]
+    },
+    {
+      "id": 3,
+      "name": "move_up",
+      "label": "Thrust Up",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Moving upward. Engine thrust stronger, maybe exhaust trail below.",
+      "generation_prompt": "thrusting upward animation, character moving up, strong engine exhaust below, 3 frames",
+      "common_issues": ["no visible thrust difference from idle"]
+    },
+    {
+      "id": 4,
+      "name": "move_down",
+      "label": "Brake / Descend",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Moving downward or braking. Engine flare forward, air brake panels.",
+      "generation_prompt": "braking descending animation, character moving down, air brakes flaring, forward thrust, 3 frames",
+      "common_issues": ["too similar to idle"]
+    },
+    {
+      "id": 5,
+      "name": "shoot",
+      "label": "Primary Fire",
+      "category": "weapons",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 3,
+      "description": "Firing main weapon. Muzzle flash, weapon recoil. Fast loop since it fires continuously.",
+      "generation_prompt": "shooting animation, muzzle flash from weapon, slight recoil, rapid fire, 3 frames",
+      "frame_data": { "startup": 0, "active": 1, "recovery": 1 },
+      "common_issues": ["muzzle flash too large for sprite size", "recoil too dramatic"]
+    },
+    {
+      "id": 6,
+      "name": "shoot_special",
+      "label": "Special Weapon",
+      "category": "weapons",
+      "frames": { "min": 3, "recommended": 5, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Powerful special attack. Bigger flash, charge-up, maybe character glows.",
+      "generation_prompt": "special weapon animation, charge up then massive fire, character glowing with energy, big muzzle flash, 5 frames",
+      "frame_data": { "startup": 2, "active": 2, "recovery": 1 },
+      "common_issues": ["charge effect too subtle", "flash covers the character"]
+    },
+    {
+      "id": 7,
+      "name": "projectile",
+      "label": "Projectile / Bullet",
+      "category": "effects",
+      "frames": { "min": 2, "recommended": 4, "max": 6 },
+      "loop": true,
+      "duration_per_frame": 3,
+      "description": "Main weapon projectile. Animated glow/trail. Separate from the character.",
+      "generation_prompt": "animated projectile, energy bolt with trailing glow, 4 frames cycling, bright colors",
+      "common_issues": ["too large", "no trail/glow animation", "hard to see against dark backgrounds"]
+    },
+    {
+      "id": 8,
+      "name": "hit",
+      "label": "Hit Reaction",
+      "category": "reactions",
+      "frames": { "min": 1, "recommended": 3, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 3,
+      "description": "Taking damage. Flash white/red, slight knockback.",
+      "generation_prompt": "hit reaction, character flashing white then red, slight knockback shake, 3 frames",
+      "common_issues": ["flash too brief to see", "no knockback indication"]
+    },
+    {
+      "id": 9,
+      "name": "death",
+      "label": "Death Explosion",
+      "category": "reactions",
+      "frames": { "min": 4, "recommended": 8, "max": 12 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Character destroyed. Multi-stage explosion: small pops → big boom → debris scatter → fade.",
+      "generation_prompt": "death explosion animation, small initial pops then large explosion expanding outward, debris scattering, 8 frames",
+      "common_issues": ["explosion too small", "no debris", "stays same size (should expand)", "character visible through explosion"]
+    },
+    {
+      "id": 10,
+      "name": "respawn",
+      "label": "Respawn / Invincible",
+      "category": "reactions",
+      "frames": { "min": 2, "recommended": 4, "max": 6 },
+      "loop": true,
+      "duration_per_frame": 4,
+      "description": "Spawning back in. Character fades in with sparkle/shield effect. Flickers to indicate invincibility.",
+      "generation_prompt": "respawn animation, character fading in with sparkle shield effect, flickering, 4 frames",
+      "common_issues": ["flicker too fast to see", "no sparkle effect"]
+    },
+    {
+      "id": 11,
+      "name": "powerup",
+      "label": "Power-Up Get",
+      "category": "transformations",
+      "frames": { "min": 3, "recommended": 5, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 5,
+      "description": "Collecting a power-up. Character glows, expands, transforms briefly.",
+      "generation_prompt": "power-up collection animation, character glowing with energy aura, brief transformation flash, expanding outward, 5 frames",
+      "common_issues": ["glow effect too subtle", "character disappears during flash"]
+    }
+  ],
+
+  "animation_sets": {
+    "min_viable_set": ["idle_center", "move_left", "move_right", "shoot", "hit", "death"],
+    "standard_set": ["idle_center", "move_left", "move_right", "move_up", "move_down", "shoot", "shoot_special", "hit", "death", "respawn"],
+    "full_set": ["idle_center", "move_left", "move_right", "move_up", "move_down", "shoot", "shoot_special", "projectile", "hit", "death", "respawn", "powerup"]
+  },
+
+  "timing": {
+    "fps": 12,
+    "shoot_fps": 15,
+    "death_fps": 10,
+    "projectile_fps": 15
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "meta": {
+    "name": "2D Platformer Template",
+    "version": "0.1.0",
+    "based_on": "Hollow Knight / Celeste / Shovel Knight conventions",
+    "description": "Animation requirements for a 2D side-scrolling platformer character. Covers movement, attacks, reactions, and environmental states.",
+    "sprite_size": "auto",
+    "color_limit": 16,
+    "notes": "Platformers need smooth transitions between ground and air states. Walk cycles are the most visible animation — invest frames here."
+  },
+
+  "categories": {
+    "movement": {
+      "label": "Core Movement",
+      "description": "Ground and air locomotion — the animations players see 90% of the time",
+      "priority": 1
+    },
+    "attacks": {
+      "label": "Combat",
+      "description": "Melee/ranged attacks, usually 2-3 tiers of power",
+      "priority": 2
+    },
+    "reactions": {
+      "label": "Reactions",
+      "description": "Taking damage, dying, invincibility flash",
+      "priority": 3
+    },
+    "environment": {
+      "label": "Environmental",
+      "description": "Climbing, swimming, pushing, ledge grab",
+      "priority": 3
+    },
+    "special": {
+      "label": "Special Abilities",
+      "description": "Character-specific powers, double jump effect, dash trail",
+      "priority": 4,
+      "customizable": true
+    }
+  },
+
+  "states": [
+    {
+      "id": 0,
+      "name": "idle",
+      "label": "Idle / Standing",
+      "category": "movement",
+      "frames": { "min": 2, "recommended": 4, "max": 8 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "Standing still. Subtle breathing or character-specific idle animation.",
+      "generation_prompt": "idle standing animation, subtle breathing, character standing relaxed on ground",
+      "common_issues": ["too much movement (should be minimal)", "feet sliding", "head bobbing unnaturally"]
+    },
+    {
+      "id": 1,
+      "name": "walk",
+      "label": "Walk / Run Cycle",
+      "category": "movement",
+      "frames": { "min": 4, "recommended": 6, "max": 10 },
+      "loop": true,
+      "duration_per_frame": 6,
+      "description": "The MOST IMPORTANT animation. Must look smooth. Character moves forward with clear stride.",
+      "generation_prompt": "walk cycle, 6 frames side by side, character walking forward with distinct leg positions showing full stride, arms swinging naturally",
+      "common_issues": ["feet sliding on ground", "legs moving in sync (wrong — they alternate)", "upper body too static", "inconsistent stride length"]
+    },
+    {
+      "id": 2,
+      "name": "jump_rise",
+      "label": "Jump Rise",
+      "category": "movement",
+      "frames": { "min": 1, "recommended": 2, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 6,
+      "description": "Leaving the ground. Usually a crouch-to-stretch motion, then upward pose.",
+      "generation_prompt": "jump takeoff animation, character crouching then launching upward, legs tucking, arms up",
+      "common_issues": ["not enough anticipation (crouch)", "character too upright during rise"]
+    },
+    {
+      "id": 3,
+      "name": "jump_peak",
+      "label": "Jump Peak / Float",
+      "category": "movement",
+      "frames": { "min": 1, "recommended": 2, "max": 3 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "At the apex of the jump. Character is airborne, limbs tucked or extended.",
+      "generation_prompt": "character at peak of jump arc, airborne, slight float, arms out for balance",
+      "common_issues": ["looks identical to rise frame", "too static"]
+    },
+    {
+      "id": 4,
+      "name": "jump_fall",
+      "label": "Jump Fall",
+      "category": "movement",
+      "frames": { "min": 1, "recommended": 2, "max": 4 },
+      "loop": true,
+      "duration_per_frame": 6,
+      "description": "Falling downward. Hair/clothes should float UP. Legs spread for landing.",
+      "generation_prompt": "character falling downward, hair floating upward, legs spread preparing for landing, arms out",
+      "common_issues": ["hair falling down instead of up", "identical to rise frame", "no downward momentum"]
+    },
+    {
+      "id": 5,
+      "name": "jump_land",
+      "label": "Jump Land",
+      "category": "movement",
+      "frames": { "min": 1, "recommended": 2, "max": 3 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Landing impact. Character bends knees to absorb. Quick transition back to idle.",
+      "generation_prompt": "character landing from jump, knees bent absorbing impact, slight squash",
+      "common_issues": ["no impact absorption", "too similar to idle"]
+    },
+    {
+      "id": 6,
+      "name": "attack_light",
+      "label": "Light Attack",
+      "category": "attacks",
+      "frames": { "min": 3, "recommended": 4, "max": 6 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Quick basic attack. Startup → active → recovery. Fast and snappy.",
+      "generation_prompt": "quick attack animation, wind-up then slash/strike then recovery, 4 frames, fast and snappy motion",
+      "frame_data": { "startup": 1, "active": 1, "recovery": 2 },
+      "common_issues": ["attack extends beyond frame boundary", "recovery too long", "no clear active frame"]
+    },
+    {
+      "id": 7,
+      "name": "attack_heavy",
+      "label": "Heavy Attack",
+      "category": "attacks",
+      "frames": { "min": 4, "recommended": 6, "max": 10 },
+      "loop": false,
+      "duration_per_frame": 6,
+      "description": "Slower, more powerful attack. More anticipation, bigger impact.",
+      "generation_prompt": "heavy attack animation, big wind-up, powerful strike with impact effect, then slow recovery, 6 frames",
+      "frame_data": { "startup": 2, "active": 2, "recovery": 2 },
+      "common_issues": ["too similar to light attack", "impact effect too large for frame", "recovery too fast"]
+    },
+    {
+      "id": 8,
+      "name": "hurt",
+      "label": "Hurt / Damage Reaction",
+      "category": "reactions",
+      "frames": { "min": 2, "recommended": 3, "max": 4 },
+      "loop": false,
+      "duration_per_frame": 4,
+      "description": "Reacting to taking damage. Flinch backward, arms up defensively.",
+      "generation_prompt": "hurt reaction animation, character flinching backward from impact, arms raised defensively, pained expression",
+      "common_issues": ["not enough recoil", "looks too similar to idle", "character moves too far"]
+    },
+    {
+      "id": 9,
+      "name": "death",
+      "label": "Death / KO",
+      "category": "reactions",
+      "frames": { "min": 3, "recommended": 5, "max": 8 },
+      "loop": false,
+      "duration_per_frame": 6,
+      "description": "Character defeated. Dramatic but quick. Ends on a grounded pose.",
+      "generation_prompt": "death animation, character collapsing, dramatic fall, ending lying on ground, 5 frames",
+      "common_issues": ["too slow", "character bounces unnaturally", "final pose doesn't look defeated"]
+    },
+    {
+      "id": 10,
+      "name": "climb",
+      "label": "Climbing",
+      "category": "environment",
+      "frames": { "min": 2, "recommended": 4, "max": 6 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "Climbing a wall or ladder. Alternating hand-over-hand motion.",
+      "generation_prompt": "climbing animation, character on wall/ladder, hands reaching up alternately, legs following",
+      "common_issues": ["hands moving in sync (wrong — they alternate)", "no body sway"]
+    },
+    {
+      "id": 11,
+      "name": "push",
+      "label": "Push / Pull",
+      "category": "environment",
+      "frames": { "min": 2, "recommended": 4, "max": 6 },
+      "loop": true,
+      "duration_per_frame": 8,
+      "description": "Pushing a heavy object. Character leans forward, legs brace.",
+      "generation_prompt": "pushing animation, character leaning forward with effort, legs bracing against ground, pushing heavy object",
+      "common_issues": ["no sense of effort", "object not present to push against"]
+    }
+  ],
+
+  "animation_sets": {
+    "min_viable_set": ["idle", "walk", "jump_rise", "jump_fall", "jump_land", "attack_light", "hurt"],
+    "standard_set": ["idle", "walk", "jump_rise", "jump_peak", "jump_fall", "jump_land", "attack_light", "attack_heavy", "hurt", "death", "climb"],
+    "full_set": ["idle", "walk", "jump_rise", "jump_peak", "jump_fall", "jump_land", "attack_light", "attack_heavy", "hurt", "death", "climb", "push"]
+  },
+
+  "timing": {
+    "fps": 10,
+    "walk_fps": 10,
+    "attack_fps": 15,
+    "idle_fps": 6,
+    "death_fps": 8
+  }
+}

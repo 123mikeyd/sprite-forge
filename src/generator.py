@@ -357,9 +357,19 @@ def generate_sheet_from_template(
             break
     if anims is None:
         # Fall back to all states defined in the template
-        anims = list((template.get("states") or {}).keys())
+        raw_states = template.get("states") or {}
+        if isinstance(raw_states, dict):
+            anims = list(raw_states.keys())
+        elif isinstance(raw_states, list):
+            anims = [s.get("name", f"state_{i}") for i, s in enumerate(raw_states)]
 
-    states = template.get("states") or {}
+    # Normalize states to a dict keyed by name (handles both list and dict formats)
+    raw_states = template.get("states") or {}
+    if isinstance(raw_states, list):
+        states = {s.get("name", f"state_{i}"): s for i, s in enumerate(raw_states)}
+    else:
+        states = raw_states
+
     results = {
         "template": template_path,
         "animation_set": animation_set,
@@ -367,7 +377,13 @@ def generate_sheet_from_template(
     }
     for state_name in anims:
         state = states.get(state_name) or {}
-        frames = state.get("frames", {}).get("recommended", 4) if isinstance(state.get("frames"), dict) else 4
+        frames_def = state.get("frames", {})
+        if isinstance(frames_def, dict):
+            frames = frames_def.get("recommended", 4)
+        elif isinstance(frames_def, int):
+            frames = frames_def
+        else:
+            frames = 4
         safe = "".join(c if c.isalnum() else "_" for c in state_name)
         out_path = os.path.join(out_dir, f"{safe}.png")
         try:
