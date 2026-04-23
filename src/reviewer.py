@@ -632,7 +632,7 @@ function exportReview() {{
         animation: s.animation || '',
         causes: s.causes || [],
         notes: s.notes || ''
-      }});
+      }};
     }})
   }};
 
