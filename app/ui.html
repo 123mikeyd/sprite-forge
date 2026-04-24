@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Forge</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#d8d8d8;min-height:100vh;padding:20px}
+.page{display:none;max-width:900px;margin:0 auto}.page.active{display:block}
+h1{color:#7af;font-size:28px;margin-bottom:8px}
+h2{color:#7af;font-size:20px;margin-bottom:12px;border-bottom:1px solid #333;padding-bottom:8px}
+h3{color:#7af;margin-bottom:8px}
+p{color:#aaa;line-height:1.6;margin-bottom:12px;font-size:14px}
+b{color:#ddd}code{background:#1a1a2a;color:#afa;padding:2px 6px;border-radius:3px;font-size:13px}
+.btn{background:#1a2a3a;color:#7af;border:1px solid #357;padding:10px 24px;font-family:inherit;font-size:14px;cursor:pointer;border-radius:4px;margin:4px;transition:background .2s}
+.btn:hover{background:#253545;border-color:#5af}
+.btn.primary{background:#1a3a2a;border-color:#3a6;color:#afa;font-weight:bold}
+.btn.primary:hover{background:#254a35}
+.btn.danger{background:#3a1a1a;border-color:#a33;color:#faa}
+textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10px;font-family:inherit;font-size:14px;border-radius:4px;resize:vertical}
+.prompt-box{background:#111;border:1px solid #333;border-radius:4px;padding:12px;margin:12px 0;font-size:13px;color:#ccc;white-space:pre-wrap;word-break:break-word;max-height:180px;overflow-y:auto;cursor:pointer;position:relative}
+.prompt-box:hover{border-color:#555}
+.prompt-box::after{content:"Click to copy";position:absolute;top:4px;right:8px;font-size:11px;color:#555}
+.prompt-box.copied::after{content:"Copied!";color:#3a6}
+.waiting{text-align:center;padding:30px;background:#111;border:1px dashed #333;border-radius:8px;margin:16px 0}
+.dot{display:inline-block;width:8px;height:8px;background:#7af;border-radius:50%;margin:0 3px;animation:pulse 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.preview-img{border:2px solid #333;border-radius:4px;image-rendering:pixelated;max-width:100%}
+.cell-grid{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.cell-card{border:2px solid #333;border-radius:4px;background:#151515;cursor:pointer;overflow:hidden;position:relative;transition:border-color .15s}
+.cell-card:hover{border-color:#555}.cell-card.good{border-color:#3a6}.cell-card.bad{border-color:#a33}
+.cell-card canvas{display:block;image-rendering:pixelated}
+.cell-card .lbl{padding:3px 5px;font-size:10px;color:#888;background:#111}
+.cell-card .badge{position:absolute;top:2px;right:2px;font-size:16px;font-weight:bold;text-shadow:0 0 4px #000}
+.status-bar{display:flex;gap:16px;flex-wrap:wrap;background:#111;border:1px solid #222;border-radius:4px;padding:8px 14px;margin:12px 0;font-size:13px}
+.val{color:#7af;font-weight:bold}
+.anim-input{background:#0a0a0a;color:#ccc;border:1px solid #333;padding:3px 8px;font-family:inherit;font-size:12px;border-radius:3px;width:100px}
+.steps{display:flex;gap:8px;margin-bottom:20px}
+.dot-step{width:10px;height:10px;border-radius:50%;background:#222;border:1px solid #444;cursor:pointer;transition:background .2s}
+.dot-step.active{background:#7af;border-color:#7af}.dot-step.done{background:#3a6;border-color:#3a6}
+.dot-step:hover{border-color:#7af}
+.flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.mt{margin-top:16px}.hidden{display:none!important}
+.nav{display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid #222}
+.color-pick{display:flex;gap:12px;margin:16px 0}
+.color-btn{width:48px;height:48px;border-radius:8px;cursor:pointer;border:3px solid #333;transition:border-color .2s,transform .1s}
+.color-btn:hover{transform:scale(1.1)}.color-btn.sel{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.3)}
+.color-btn.green{background:#00FF00}.color-btn.blue{background:#0088FF}.color-btn.magenta{background:#FF00FF}
+.color-label{font-size:12px;color:#888;text-align:center;margin-top:2px}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:100;overflow-y:auto;padding:20px}
+.overlay.active{display:flex;justify-content:center;align-items:flex-start}
+.overlay-inner{background:#0e0e0e;border:1px solid #333;border-radius:8px;padding:24px;max-width:900px;width:100%;margin-top:40px}
+.overlay-title{color:#7af;font-size:18px;margin-bottom:4px}
+.overlay-hint{color:#888;font-size:12px;margin-bottom:16px}
+.fix-canvas-wrap{position:relative;display:inline-block;border:1px solid #444;cursor:crosshair;margin-bottom:16px}
+.fix-canvas-wrap canvas{display:block;image-rendering:pixelated}
+.fix-line{position:absolute;background:#ff0;opacity:.8;z-index:10}
+.fix-line.h{height:3px;left:0;right:0;cursor:ns-resize}
+.fix-line.v{width:3px;top:0;bottom:0;cursor:ew-resize}
+.fix-line::after{content:'';position:absolute;background:#ff0;border-radius:50%;width:14px;height:14px}
+.fix-line.h::after{left:50%;top:-5px;transform:translateX(-50%)}
+.fix-line.v::after{top:50%;left:-5px;transform:translateY(-50%)}
+.fix-previews{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.fix-preview{border:2px solid #444;border-radius:4px;overflow:hidden;background:#111}
+.fix-preview canvas{display:block;image-rendering:pixelated}
+.fix-preview .plbl{padding:4px 6px;font-size:10px;color:#888;text-align:center;background:#0a0a0a}
+.prev-canvas{image-rendering:pixelated;border:1px solid #444;margin:12px auto;display:block}
+.frame-pips{display:flex;gap:6px;justify-content:center;margin:8px 0}
+.frame-pip{width:12px;height:12px;border-radius:50%;background:#222;border:1px solid #444}
+.frame-pip.active{background:#7af;border-color:#7af}
+.prev-controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px}
+.prev-controls label{color:#888;font-size:12px}
+.prev-controls input[type=range]{width:100px}
+</style>
+</head>
+<body>
+
+<!-- STEP DOTS -->
+<div class="steps" id="stepDots"></div>
+
+<!-- ═══ PAGE 0: WELCOME ═══ -->
+<div class="page active" id="p0">
+<h1>Sprite Forge</h1>
+<h2>2D Fighter Sprite Sheet Generator</h2>
+<p>Create complete sprite sheets for 2D fighting game characters. Walk through steps, generate and review animations.</p>
+<p>Each step: click <b>Generate</b>, copy the prompt, send it to Hermes. The image appears automatically. Review, mark good/bad, continue.</p>
+<h3 class="mt">Pick a background color</h3>
+<p>Choose a color that is <b>NOT</b> in your character.</p>
+<div class="color-pick">
+<div><div class="color-btn green" onclick="pickBg('green',this)"></div><div class="color-label">Green</div></div>
+<div><div class="color-btn blue" onclick="pickBg('blue',this)"></div><div class="color-label">Blue</div></div>
+<div><div class="color-btn magenta sel" onclick="pickBg('magenta',this)"></div><div class="color-label">Magenta</div></div>
+</div>
+<div class="nav"><div></div><button class="btn primary" onclick="go(1)">Start →</button></div>
+</div>
+
+<!-- ═══ PAGE 1: CHARACTER ═══ -->
+<div class="page" id="p1">
+<h2>Step 1: Your Character</h2>
+<p>Describe your character. Be specific about colors, clothing, body type.</p>
+<textarea id="desc" rows="3" placeholder="Example: A humanoid shiba inu with a red cape, standing on back feet, front paws up like fists"></textarea>
+<div class="mt"><button class="btn primary" onclick="gen('reference')">Generate Reference</button></div>
+<div id="refP" class="hidden mt"><h3>Send this to Hermes:</h3><div class="prompt-box" id="refPT" onclick="copyTxt(this)"></div>
+<div class="waiting" id="refW"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><p style="margin-top:8px">Waiting for image...</p></div></div>
+<div id="refV" class="hidden"><img id="refI" class="preview-img mt" style="max-width:300px">
+<p class="mt">Does this look right?</p>
+<div class="flex mt"><button class="btn primary" onclick="go(2)">Continue</button><button class="btn danger" onclick="rst(1)">Redo</button></div></div>
+<div class="nav"><button class="btn" onclick="go(0)">← Back</button></div>
+</div>
+
+<!-- ═══ PAGE 2: IDLE+WALK ═══ -->
+<div class="page" id="p2">
+<h2>Step 2: Idle & Walk</h2>
+<div class="flex">
+<button class="btn primary" onclick="gen('idle_walk')">Generate Idle + Walk</button>
+<span style="color:#555">or</span>
+<label class="btn" style="cursor:pointer"><input type="file" accept="image/*" style="display:none" onchange="uploadGrid(this,'idle_walk')">Upload Image</label>
+</div>
+<div id="iwP" class="hidden mt"><h3>Send this to Hermes:</h3><div class="prompt-box" id="iwPT" onclick="copyTxt(this)"></div>
+<div class="waiting" id="iwW"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><p style="margin-top:8px">Waiting for image...</p></div></div>
+<div id="iwC" class="hidden"><div class="status-bar" id="iwS"></div><div class="cell-grid" id="iwG"></div>
+<div class="flex mt"><button class="btn" onclick="openPrev('iw')">▶ Play Preview</button><button class="btn" onclick="openFix('iw')">Fix Frames</button></div>
+<div class="flex mt"><input class="anim-input" id="iw0" value="idle"><input class="anim-input" id="iw1" value="walk"><input class="anim-input" id="iw2" value="walk"><input class="anim-input" id="iw3" value="walk"></div>
+<div class="flex mt"><button class="btn primary" onclick="ok('iw')">Accept →</button><button class="btn danger" onclick="rst(2)">Redo</button></div></div>
+<div class="nav"><button class="btn" onclick="go(1)">← Back</button></div>
+</div>
+
+<!-- ═══ PAGE 3: PUNCH+KICK ═══ -->
+<div class="page" id="p3">
+<h2>Step 3: Punch & Kick</h2>
+<div class="flex">
+<button class="btn primary" onclick="gen('punch_kick')">Generate Punch + Kick</button>
+<span style="color:#555">or</span>
+<label class="btn" style="cursor:pointer"><input type="file" accept="image/*" style="display:none" onchange="uploadGrid(this,'punch_kick')">Upload Image</label>
+</div>
+<div id="pkP" class="hidden mt"><h3>Send this to Hermes:</h3><div class="prompt-box" id="pkPT" onclick="copyTxt(this)"></div>
+<div class="waiting" id="pkW"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><p style="margin-top:8px">Waiting for image...</p></div></div>
+<div id="pkC" class="hidden"><div class="status-bar" id="pkS"></div><div class="cell-grid" id="pkG"></div>
+<div class="flex mt"><button class="btn" onclick="openPrev('pk')">▶ Play Preview</button><button class="btn" onclick="openFix('pk')">Fix Frames</button></div>
+<div class="flex mt"><input class="anim-input" id="pk0" value="punch"><input class="anim-input" id="pk1" value="punch"><input class="anim-input" id="pk2" value="kick"><input class="anim-input" id="pk3" value="kick"></div>
+<div class="flex mt"><button class="btn primary" onclick="ok('pk')">Accept →</button><button class="btn danger" onclick="rst(3)">Redo</button></div></div>
+<div class="nav"><button class="btn" onclick="go(2)">← Back</button></div>
+</div>
+
+<!-- ═══ PAGE 4: JUMP+SPECIAL ═══ -->
+<div class="page" id="p4">
+<h2>Step 4: Jump & Special</h2>
+<div class="flex">
+<button class="btn primary" onclick="gen('jump_special')">Generate Jump + Special</button>
+<span style="color:#555">or</span>
+<label class="btn" style="cursor:pointer"><input type="file" accept="image/*" style="display:none" onchange="uploadGrid(this,'jump_special')">Upload Image</label>
+</div>
+<div id="jsP" class="hidden mt"><h3>Send this to Hermes:</h3><div class="prompt-box" id="jsPT" onclick="copyTxt(this)"></div>
+<div class="waiting" id="jsW"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><p style="margin-top:8px">Waiting for image...</p></div></div>
+<div id="jsC" class="hidden"><div class="status-bar" id="jsS"></div><div class="cell-grid" id="jsG"></div>
+<div class="flex mt"><button class="btn" onclick="openPrev('js')">▶ Play Preview</button><button class="btn" onclick="openFix('js')">Fix Frames</button></div>
+<div class="flex mt"><input class="anim-input" id="js0" value="jump"><input class="anim-input" id="js1" value="jump"><input class="anim-input" id="js2" value="jump_kick"><input class="anim-input" id="js3" value="fireball"></div>
+<div class="flex mt"><button class="btn primary" onclick="ok('js')">Accept →</button><button class="btn danger" onclick="rst(4)">Redo</button></div></div>
+<div class="nav"><button class="btn" onclick="go(3)">← Back</button></div>
+</div>
+
+<!-- ═══ PAGE 5: HIT ═══ -->
+<div class="page" id="p5">
+<h2>Step 5: Hit Reactions</h2>
+<div class="flex">
+<button class="btn primary" onclick="gen('hurt_knockdown')">Generate Hit Reactions</button>
+<span style="color:#555">or</span>
+<label class="btn" style="cursor:pointer"><input type="file" accept="image/*" style="display:none" onchange="uploadGrid(this,'hurt_knockdown')">Upload Image</label>
+</div>
+<div id="hkP" class="hidden mt"><h3>Send this to Hermes:</h3><div class="prompt-box" id="hkPT" onclick="copyTxt(this)"></div>
+<div class="waiting" id="hkW"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><p style="margin-top:8px">Waiting for image...</p></div></div>
+<div id="hkC" class="hidden"><div class="status-bar" id="hkS"></div><div class="cell-grid" id="hkG"></div>
+<div class="flex mt"><button class="btn" onclick="openPrev('hk')">▶ Play Preview</button><button class="btn" onclick="openFix('hk')">Fix Frames</button></div>
+<div class="flex mt"><input class="anim-input" id="hk0" value="hurt"><input class="anim-input" id="hk1" value="knockdown"><input class="anim-input" id="hk2" value="knockdown"><input class="anim-input" id="hk3" value="getup"></div>
+<div class="flex mt"><button class="btn primary" onclick="go(6)">Build Final Sheet →</button><button class="btn danger" onclick="rst(5)">Redo</button></div></div>
+<div class="nav"><button class="btn" onclick="go(4)">← Back</button></div>
+</div>
+
+<!-- ═══ PAGE 6: FINAL ═══ -->
+<div class="page" id="p6">
+<h2>Sprite Sheet Complete!</h2>
+<p>Tell Hermes: <code>assemble sprite sheet</code></p>
+<div class="mt"><button class="btn" onclick="go(0)">↻ Start Over</button></div>
+</div>
+
+<!-- ═══ FIX MODAL ═══ -->
+<div class="overlay" id="fixOvl">
+<div class="overlay-inner">
+<div class="overlay-title">Fix Frames — Adjust Crop</div>
+<div class="overlay-hint">Drag the <b style="color:#ff0">yellow lines</b> to adjust where each frame is cut. Click <b>Apply</b> when centered.</div>
+<div class="fix-canvas-wrap" id="fixWrap">
+<canvas id="fixCv"></canvas>
+<div class="fix-line h" id="fixH" style="top:50%"></div>
+<div class="fix-line v" id="fixV" style="left:50%"></div>
+</div>
+<h3>Preview</h3>
+<div class="fix-previews" id="fixPrev"></div>
+<div class="flex mt"><button class="btn primary" onclick="applyFix()">Apply Crops</button><button class="btn" onclick="resetFix()">Reset</button><button class="btn danger" onclick="closeFix()">Cancel</button></div>
+</div>
+</div>
+
+<!-- ═══ PREVIEW MODAL ═══ -->
+<div class="overlay" id="prevOvl">
+<div class="overlay-inner" style="text-align:center;max-width:500px">
+<div class="overlay-title">Animation Preview</div>
+<canvas id="prevCv" class="prev-canvas" width="200" height="200"></canvas>
+<div class="frame-pips" id="prevPips"></div>
+<div class="prev-controls">
+<label>FPS: <span id="prevFpsVal">6</span></label>
+<input type="range" id="prevFpsR" min="1" max="24" value="6" oninput="setFps(this.value)">
+<button class="btn" id="prevBtn" onclick="togglePrev()">⏸ Pause</button>
+<button class="btn danger" onclick="closePrev()">Close</button>
+</div>
+</div>
+</div>
+
+<script>
+var bg='magenta',desc='',step=0,cells={},gridImg={};
+var fixSt={prefix:'',sx:.5,sy:.5,img:null,sc:1};
+var prevFr=[],prevIdx=0,prevTmr=null,prevOn=true,prevFps=6;
+
+var STEP_NAMES=['Welcome','Reference','Idle+Walk','Punch+Kick','Jump+Special','Hit Reactions','Final'];
+var BG_HEX={green:'#00FF00',blue:'#0088FF',magenta:'#FF00FF'};
+
+var PROMPTS={
+reference:function(d){return 'Generate a single image: Side-view pixel art character for a 2D fighting game, character faces RIGHT. '+d+'. The character is in a neutral idle fighting stance \u2014 knees slightly bent, weight balanced between both feet, hands up in guard position near the chin. The entire character must be visible from head to feet with at least 10% padding on all sides so nothing is cut off. Character should be roughly 70% of the image height, centered horizontally. Style: crisp 16-bit pixel art with clean black outlines, saturated colors, similar to Street Fighter III or Skullgirls sprites. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' solid background behind the character. No text, no logos, no effects \u2014 just the character.'},
+idle_walk:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS (at least 4px) clearly separating 4 cells of equal size. Cell 1 (top-left): IDLE \u2014 standing still in guard stance, both feet planted, hands up. Cell 2 (top-right): WALK step 1 \u2014 RIGHT foot forward, LEFT foot back, LEFT arm swings forward, RIGHT arm swings back. Cell 3 (bottom-left): WALK step 2 \u2014 MIDSTRIDE passing position, both legs crossing near center, body at lowest point, arms at sides. Cell 4 (bottom-right): WALK step 3 \u2014 LEFT foot forward, RIGHT foot back, RIGHT arm swings forward, LEFT arm swings back (mirror of cell 2). Each character must be fully contained in its cell, same size, centered. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'},
+punch_kick:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS separating 4 cells. Cell 1 (top-left): PUNCH wind-up \u2014 pulling right fist back near shoulder, torso twisting to load power, weight on back foot. Cell 2 (top-right): PUNCH impact \u2014 right fist fully extended forward at full reach, torso rotated forward, weight on front foot. Cell 3 (bottom-left): KICK chamber \u2014 right knee raised high to chest, leaning back slightly, arms out for balance. Cell 4 (bottom-right): KICK impact \u2014 right leg fully extended horizontally, foot at full reach, body leaning back. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'},
+jump_special:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS separating 4 cells. Cell 1 (top-left): JUMP crouch \u2014 squatting low before jump, knees deeply bent, arms pulling back for launch. Cell 2 (top-right): JUMP rise \u2014 body going up, legs tucking slightly, arms raised. Cell 3 (bottom-left): JUMP kick \u2014 body horizontal in air, right leg extended forward in flying kick. Cell 4 (bottom-right): SPECIAL MOVE \u2014 standing on ground, both arms thrust forward, energy projectile launching from hands. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'},
+hurt_knockdown:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS separating 4 cells. Cell 1 (top-left): HIT reaction \u2014 getting punched, head snapping back, body recoiling. Cell 2 (top-right): KNOCKDOWN \u2014 falling backward, body almost horizontal. Cell 3 (bottom-left): ON GROUND \u2014 lying on back, defeated. Cell 4 (bottom-right): GETTING UP \u2014 on one knee, pushing off ground to stand. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'}
+};
+
+// ══ NAV ══
+function go(p){
+  document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active')});
+  document.getElementById('p'+p).classList.add('active');
+  step=p;dots();localStorage.setItem('sf_step',p);
+}
+
+function dots(){
+  var el=document.getElementById('stepDots');el.innerHTML='';
+  for(var i=0;i<=6;i++){
+    var d=document.createElement('div');
+    d.className='dot-step'+(i===step?' active':i<step?' done':'');
+    d.title=STEP_NAMES[i];
+    (function(idx){d.onclick=function(){jumpTo(idx)}})(i);
+    el.appendChild(d);
+  }
+}
+
+function jumpTo(p){
+  if(p<=step){go(p);return}
+  if(confirm('Skip to "'+STEP_NAMES[p]+'"?'))go(p);
+}
+
+function pickBg(c,el){
+  bg=c;
+  document.querySelectorAll('.color-btn').forEach(function(b){b.classList.remove('sel')});
+  el.classList.add('sel');
+}
+
+function copyTxt(el){
+  navigator.clipboard.writeText(el.textContent);
+  el.classList.add('copied');
+  setTimeout(function(){el.classList.remove('copied')},2000);
+}
+
+// ══ GENERATE ══
+function gen(key){
+  desc=document.getElementById('desc')?document.getElementById('desc').value:desc;
+  var p=PROMPTS[key](desc);
+  var m={reference:'ref',idle_walk:'iw',punch_kick:'pk',jump_special:'js',hurt_knockdown:'hk'};
+  document.getElementById(m[key]+'PT').textContent=p;
+  document.getElementById(m[key]+'P').classList.remove('hidden');
+  localStorage.setItem('sf_wait',key);localStorage.setItem('sf_bg',bg);
+  poll(key);
+}
+
+var pollIv=null;
+function poll(key){
+  if(pollIv)clearInterval(pollIv);
+  pollIv=setInterval(function(){
+    fetch('/output/latest.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+      if(d.step===key&&d.ready){clearInterval(pollIv);onReady(key,d)}
+    }).catch(function(){})
+  },2000);
+}
+
+function onReady(key,d){
+  var m={reference:'ref',idle_walk:'iw',punch_kick:'pk',jump_special:'js',hurt_knockdown:'hk'}[key];
+  document.getElementById(m+'W').classList.add('hidden');
+  if(key==='reference'){
+    document.getElementById('refI').src=d.image;
+    document.getElementById('refV').classList.remove('hidden');
+  }else{
+    gridImg[m]=d;
+    renderCells(m,d.cells);
+    document.getElementById(m+'C').classList.remove('hidden');
+  }
+}
+
+// ══ RENDER CELLS ══
+function renderCells(prefix,c){
+  var g=document.getElementById(prefix+'G');g.innerHTML='';
+  cells[prefix]=c.map(function(x){return{image:x.image,path:x.path,status:'unmarked'}});
+  c.forEach(function(cell,i){
+    var card=document.createElement('div');card.className='cell-card';card.dataset.p=prefix;card.dataset.i=i;
+    var cv=document.createElement('canvas');
+    var img=new Image();
+    img.onload=(function(canvas,idx){return function(){
+      cropAndDisplay(canvas,img,bg);
+    }})(cv,i);
+    img.src=cell.image;
+    var b=document.createElement('div');b.className='badge';
+    var l=document.createElement('div');l.className='lbl';l.textContent='Frame '+i;
+    card.appendChild(cv);card.appendChild(b);card.appendChild(l);
+    card.onclick=(function(p,idx){return function(){toggleCard(card,p,idx)}})(prefix,i);
+    g.appendChild(card);
+  });
+  updateStat(prefix);
+}
+
+function cropAndDisplay(canvas,img,bgType){
+  var tmp=document.createElement('canvas');tmp.width=img.width;tmp.height=img.height;
+  var tc=tmp.getContext('2d');tc.drawImage(img,0,0);
+  var id=tc.getImageData(0,0,tmp.width,tmp.height),d=id.data;
+  var minX=tmp.width,minY=tmp.height,maxX=0,maxY=0;
+  for(var y=0;y<tmp.height;y++){for(var x=0;x<tmp.width;x++){
+    var idx=(y*tmp.width+x)*4;
+    var r=d[idx],g=d[idx+1],b=d[idx+2];
+    var isBg=false;
+    if(bgType==='green')isBg=(r<80&&g>160&&b<80);
+    else if(bgType==='blue')isBg=(r<80&&g<80&&b>160);
+    else isBg=(r>200&&g<50&&b>200);
+    if(!isBg){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y)}
+    if(isBg)d[idx+3]=0;
+  }}
+  tc.putImageData(id,0,0);
+  if(maxX<=minX||maxY<=minY){canvas.width=60;canvas.height=60;return}
+  var pad=8;minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);
+  maxX=Math.min(tmp.width-1,maxX+pad);maxY=Math.min(tmp.height-1,maxY+pad);
+  var cw=maxX-minX+1,ch=maxY-minY+1;
+  var ds=120,sc=Math.min(ds/cw,ds/ch,1);
+  var dw=Math.max(1,Math.round(cw*sc)),dh=Math.max(1,Math.round(ch*sc));
+  canvas.width=dw;canvas.height=dh;canvas.style.width=dw+'px';canvas.style.height=dh+'px';
+  var ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(tmp,minX,minY,cw,ch,0,0,dw,dh);
+}
+
+function toggleCard(card,p,i){
+  var d=cells[p][i];
+  if(d.status!=='good'){d.status='good';card.classList.remove('bad');card.classList.add('good');card.querySelector('.badge').textContent='\u2713'}
+  else{d.status='rejected';card.classList.remove('good');card.classList.add('bad');card.querySelector('.badge').textContent='\u2717'}
+  updateStat(p);
+}
+
+function updateStat(p){
+  var cards=document.querySelectorAll('#'+p+'G .cell-card');
+  var g=0,b=0,u=0;
+  cards.forEach(function(c){var s=cells[p][c.dataset.i].status;if(s==='good')g++;else if(s==='rejected')b++;else u++});
+  document.getElementById(p+'S').innerHTML='<span>Total:<b class="val">'+cards.length+'</b></span> <span>Good:<b class="val" style="color:#7c7">'+g+'</b></span> <span>Bad:<b class="val" style="color:#faa">'+b+'</b></span> <span>Unmarked:<b class="val" style="color:#aa7">'+u+'</b></span>';
+}
+
+function ok(p){
+  var a=[];for(var i=0;i<4;i++){var inp=document.getElementById(p+i);a.push(inp?inp.value:'?')}
+  var next={iw:3,pk:4,js:5,hk:6};go(next[p]);
+}
+
+function rst(page){
+  var m={1:'ref',2:'iw',3:'pk',4:'js',5:'hk'}[page];
+  if(m==='ref'){document.getElementById('refV').classList.add('hidden');document.getElementById('refP').classList.add('hidden')}
+  else{document.getElementById(m+'C').classList.add('hidden');document.getElementById(m+'P').classList.add('hidden')}
+}
+
+// ══ UPLOAD ══
+function uploadGrid(input,stepKey){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width,h=img.height,cw=w/2,ch=h/2;
+      var m={idle_walk:'iw',punch_kick:'pk',jump_special:'js',hurt_knockdown:'hk'}[stepKey];
+      var c=[];
+      for(var r=0;r<2;r++){for(var col=0;col<2;col++){
+        var cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+        cv.getContext('2d').drawImage(img,col*cw,r*ch,cw,ch,0,0,cw,ch);
+        c.push({index:r*2+col,image:cv.toDataURL('image/png'),path:'upload_'+(r*2+col)+'.png'});
+      }}
+      gridImg[m]={cells:c};
+      renderCells(m,c);
+      document.getElementById(m+'C').classList.remove('hidden');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ══ FIX TOOL ══
+function openFix(prefix){
+  fixSt.prefix=prefix;
+  var data=gridImg[prefix];
+  if(!data||!data.grid){alert('No grid image to fix. Generate or upload first.');return}
+  var img=new Image();
+  img.onload=function(){
+    fixSt.img=img;
+    var cv=document.getElementById('fixCv');
+    var sc=Math.min(800/img.width,600/img.height,1);
+    cv.width=img.width*sc;cv.height=img.height*sc;
+    cv.getContext('2d').imageSmoothingEnabled=false;
+    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+    fixSt.sc=sc;fixSt.sx=.5;fixSt.sy=.5;
+    document.getElementById('fixH').style.top=(cv.height/2)+'px';
+    document.getElementById('fixV').style.left=(cv.width/2)+'px';
+    updateFixPrev();
+    document.getElementById('fixOvl').classList.add('active');
+  };
+  img.src=data.grid;
+}
+
+function closeFix(){document.getElementById('fixOvl').classList.remove('active')}
+function resetFix(){
+  var cv=document.getElementById('fixCv');
+  fixSt.sx=.5;fixSt.sy=.5;
+  document.getElementById('fixH').style.top=(cv.height/2)+'px';
+  document.getElementById('fixV').style.left=(cv.width/2)+'px';
+  updateFixPrev();
+}
+
+function updateFixPrev(){
+  var img=fixSt.img;if(!img)return;
+  var sx=Math.round(fixSt.sx*img.width),sy=Math.round(fixSt.sy*img.height);
+  var regions=[[0,0,sx,sy],[sx,0,img.width-sx,sy],[0,sy,sx,img.height-sy],[sx,sy,img.width-sx,img.height-sy]];
+  var container=document.getElementById('fixPrev');container.innerHTML='';
+  regions.forEach(function(r,i){
+    var div=document.createElement('div');div.className='fix-preview';
+    var cv=document.createElement('canvas');
+    var ps=Math.min(150/Math.max(r[2],1),150/Math.max(r[3],1),1);
+    cv.width=Math.max(1,Math.round(r[2]*ps));cv.height=Math.max(1,Math.round(r[3]*ps));
+    var ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(img,r[0],r[1],r[2],r[3],0,0,cv.width,cv.height);
+    // chroma key preview
+    var id=ctx.getImageData(0,0,cv.width,cv.height),d=id.data;
+    for(var p=0;p<d.length;p+=4){
+      if(d[p]>200&&d[p+1]<50&&d[p+2]>200)d[p+3]=0;
+      if(d[p]<80&&d[p+1]>160&&d[p+2]<80)d[p+3]=0;
+      if(d[p]<80&&d[p+1]<80&&d[p+2]>160)d[p+3]=0;
+    }
+    ctx.putImageData(id,0,0);
+    var lbl=document.createElement('div');lbl.className='plbl';lbl.textContent='Cell '+(i+1)+': '+r[2]+'x'+r[3];
+    div.appendChild(cv);div.appendChild(lbl);container.appendChild(div);
+  });
+}
+
+function applyFix(){
+  var img=fixSt.img;if(!img)return;
+  var prefix=fixSt.prefix;
+  var sx=Math.round(fixSt.sx*img.width),sy=Math.round(fixSt.sy*img.height);
+  var regions=[[0,0,sx,sy],[sx,0,img.width-sx,sy],[0,sy,sx,img.height-sy],[sx,sy,img.width-sx,img.height-sy]];
+  var newCells=[];
+  regions.forEach(function(r,i){
+    var cv=document.createElement('canvas');cv.width=r[2];cv.height=r[3];
+    cv.getContext('2d').drawImage(img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
+    newCells.push({index:i,image:cv.toDataURL('image/png'),path:cells[prefix][i]?cells[prefix][i].path:''});
+  });
+  renderCells(prefix,newCells);
+  closeFix();
+}
+
+// Fix line dragging
+var fixDrag=null;
+document.addEventListener('mousedown',function(e){
+  if(e.target.id==='fixH'){fixDrag='h';e.preventDefault()}
+  if(e.target.id==='fixV'){fixDrag='v';e.preventDefault()}
+});
+document.addEventListener('mousemove',function(e){
+  if(!fixDrag)return;
+  var wrap=document.getElementById('fixWrap');if(!wrap)return;
+  var rect=wrap.getBoundingClientRect();
+  if(fixDrag==='h'){
+    var y=Math.max(10,Math.min(rect.height-10,e.clientY-rect.top));
+    document.getElementById('fixH').style.top=y+'px';fixSt.sy=y/rect.height;
+  }
+  if(fixDrag==='v'){
+    var x=Math.max(10,Math.min(rect.width-10,e.clientX-rect.left));
+    document.getElementById('fixV').style.left=x+'px';fixSt.sx=x/rect.width;
+  }
+  updateFixPrev();
+});
+document.addEventListener('mouseup',function(){fixDrag=null});
+
+// ══ ANIMATION PREVIEW ══
+function openPrev(prefix){
+  var data=cells[prefix]||[];if(!data.length){alert('No frames to preview');return}
+  prevFr=[];prevIdx=0;prevOn=true;prevFps=6;
+  document.getElementById('prevFpsR').value=6;
+  document.getElementById('prevFpsVal').textContent='6';
+  var loaded=0;
+  data.forEach(function(cell,i){
+    var img=new Image();
+    img.onload=function(){loaded++;if(loaded===data.length){startPrev();tickPrev()}};
+    img.src=cell.image;prevFr.push(img);
+  });
+  var pips=document.getElementById('prevPips');pips.innerHTML='';
+  data.forEach(function(_,i){
+    var pip=document.createElement('div');pip.className='frame-pip'+(i===0?' active':'');pip.id='pp'+i;
+    pips.appendChild(pip);
+  });
+  document.getElementById('prevOvl').classList.add('active');
+}
+
+function startPrev(){
+  if(prevTmr)clearInterval(prevTmr);
+  prevTmr=setInterval(tickPrev,1000/prevFps);
+  document.getElementById('prevBtn').textContent='\u23F8 Pause';
+  prevOn=true;
+}
+
+function tickPrev(){
+  var cv=document.getElementById('prevCv');var ctx=cv.getContext('2d');
+  var img=prevFr[prevIdx];if(!img)return;
+  var tmp=document.createElement('canvas');tmp.width=img.width;tmp.height=img.height;
+  var tc=tmp.getContext('2d');tc.drawImage(img,0,0);
+  var id=tc.getImageData(0,0,tmp.width,tmp.height),d=id.data;
+  var minX=tmp.width,minY=tmp.height,maxX=0,maxY=0;
+  for(var y=0;y<tmp.height;y++){for(var x=0;x<tmp.width;x++){
+    var idx=(y*tmp.width+x)*4;
+    var r=d[idx],g=d[idx+1],b=d[idx+2];
+    var isBg=(r>200&&g<50&&b>200)||(r<80&&g>160&&b<80)||(r<80&&g<80&&b>160);
+    if(!isBg){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y)}
+    if(isBg)d[idx+3]=0;
+  }}
+  tc.putImageData(id,0,0);
+  if(maxX>minX){
+    var pad=4;minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);
+    maxX=Math.min(tmp.width-1,maxX+pad);maxY=Math.min(tmp.height-1,maxY+pad);
+    var cw=maxX-minX+1,ch=maxY-minY+1;
+    var sc=Math.min(200/cw,200/ch,3);
+    cv.width=Math.max(1,Math.round(cw*sc));cv.height=Math.max(1,Math.round(ch*sc));
+    ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(tmp,minX,minY,cw,ch,0,0,cv.width,cv.height);
+  }
+  prevFr.forEach(function(_,i){
+    var pip=document.getElementById('pp'+i);
+    if(pip)pip.className='frame-pip'+(i===prevIdx?' active':'');
+  });
+  prevIdx=(prevIdx+1)%prevFr.length;
+}
+
+function togglePrev(){
+  prevOn=!prevOn;
+  if(prevOn){
+    document.getElementById('prevBtn').textContent='\u23F8 Pause';
+    prevTmr=setInterval(tickPrev,1000/prevFps);
+  }else{
+    document.getElementById('prevBtn').textContent='\u25B6 Play';
+    if(prevTmr)clearInterval(prevTmr);
+  }
+}
+
+function setFps(val){
+  prevFps=parseInt(val);
+  document.getElementById('prevFpsVal').textContent=val;
+  if(prevOn){if(prevTmr)clearInterval(prevTmr);prevTmr=setInterval(tickPrev,1000/prevFps)}
+}
+
+function closePrev(){
+  if(prevTmr)clearInterval(prevTmr);
+  document.getElementById('prevOvl').classList.remove('active');
+}
+
+// ══ INIT ══
+dots();
+var savedStep=parseInt(localStorage.getItem('sf_step')||'0');
+if(savedStep>0)go(savedStep);
+if(localStorage.getItem('sf_wait')){poll(localStorage.getItem('sf_wait'))}
+</script>
+</body>
+</html>

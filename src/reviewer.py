@@ -21,20 +21,6 @@ import argparse
 import base64
 import json
 import os
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Dict, List, Optional
-
-
-def _embed_image_as_data_uri(image_path: str) -> str:
-    """Read a PNG and return a data: URI for embedding in HTML."""
-    with open(image_path, "rb") as f:
-        raw = f.read()
-    b64 = base64.b64encode(raw).decode("ascii")
-    return f"data:image/png;base64,{b64}"
-
-
 def generate_review_html(
     analyzer_json_path: str,
     sheet_path: str,
@@ -42,6 +28,9 @@ def generate_review_html(
     template_path: Optional[str] = None,
 ) -> str:
     """Generate a self-contained HTML review tool.
+
+    The sheet image is loaded via file picker (not embedded as base64)
+    because browsers block huge data URIs in local files.
 
     Returns the path to the written HTML file.
     """
@@ -58,9 +47,6 @@ def generate_review_html(
             issues = state.get("common_issues", [])
             if issues:
                 common_issues_by_state[name] = issues
-
-    # Embed the sheet as a data URI
-    sheet_data_uri = _embed_image_as_data_uri(sheet_path)
 
     # Build the frame data for JS
     frames_js = json.dumps(analyzer_data.get("frames", []))
@@ -253,6 +239,32 @@ def generate_review_html(
 <body>
 
 <h1>Sprite Forge — Frame Reviewer</h1>
+
+<!-- Drop zone for sheet image -->
+<div id="dropZone" style="
+  border: 3px dashed #555; border-radius: 12px;
+  padding: 60px 40px; text-align: center;
+  margin: 40px auto; max-width: 600px;
+  background: #111; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+" ondragover="event.preventDefault(); this.style.borderColor='#7af'; this.style.background='#151820';"
+   ondragleave="this.style.borderColor='#555'; this.style.background='#111';"
+   ondrop="event.preventDefault(); this.style.borderColor='#555'; this.style.background='#111'; loadSheet(event.dataTransfer.files[0]);"
+   onclick="document.getElementById('fileInput').click();">
+  <input type="file" id="fileInput" accept="image/*" style="display:none"
+         onchange="loadSheet(this.files[0]);">
+  <div style="font-size: 48px; margin-bottom: 16px;">📄</div>
+  <div style="color: #7af; font-size: 18px; margin-bottom: 8px;">
+    Drop <b>{sheet_basename}</b> here
+  </div>
+  <div style="color: #666; font-size: 13px;">
+    or click to browse &nbsp;|&nbsp; {total_frames} frames to review
+  </div>
+</div>
+
+<!-- Main content (hidden until sheet loads) -->
+<div id="mainContent" style="display:none;">
+
 <div class="meta">
   Sheet: <b>{sheet_basename}</b> &nbsp;|&nbsp;
   Analyzer: <b>{analyzer_basename}</b> &nbsp;|&nbsp;
@@ -287,7 +299,7 @@ def generate_review_html(
       <button class="btn-apply" onclick="applyCause()">Apply</button>
     </div>
   </div>
-</div>
+</div><!-- end mainContent -->
 
 <div class="shortcuts">
   <kbd>Click</kbd> select &nbsp; <kbd>Shift+Click</kbd> multi &nbsp;
@@ -300,7 +312,7 @@ const FRAMES = {frames_js};
 const ROW_GROUPS = {row_groups_js};
 const SUMMARY = {summary_js};
 const COMMON_ISSUES = {common_issues_js};
-const SHEET_URI = {json.dumps(sheet_data_uri)};
+const SHEET_BASENAME = {json.dumps(sheet_basename)};
 
 // ── State ──
 let sheetImg = null;
@@ -313,10 +325,35 @@ const DEFAULT_CAUSES = [
   "merged_sprites", "missing_frame", "custom"
 ];
 
-// ── Load sheet ──
-const img = new Image();
-img.onload = () => {{ sheetImg = img; renderAll(); }};
-img.src = SHEET_URI;
+// ── Load sheet via file picker or auto-load ──
+function loadSheet(file) {{
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {{
+    const img = new Image();
+    img.onload = () => {{
+      sheetImg = img;
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      renderAll();
+    }};
+    img.src = e.target.result;
+  }};
+  reader.readAsDataURL(file);
+}}
+
+// Auto-load: try fetching the sheet from the same directory (works when served via HTTP)
+(function autoLoad() {{
+  const img = new Image();
+  img.onload = () => {{
+    sheetImg = img;
+    document.getElementById('dropZone').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    renderAll();
+  }};
+  img.onerror = () => {{ /* file picker will handle it */ }};
+  img.src = SHEET_BASENAME;
+}})();
 
 // ── Render ──
 function renderAll() {{
