@@ -293,6 +293,26 @@ body.light .gait-desc{color:#555}
 <div class="overlay-title">Settings</div>
 <div class="overlay-hint">Configure Sprite Forge preferences. All settings are saved automatically.</div>
 
+
+<div class="settings-group">
+<div class="settings-label">Generation Mode</div>
+<div class="settings-options">
+<button class="btn primary" id="modeAiPrompt" onclick="setGenMode('ai')">AI Prompt Per-Frame</button>
+<button class="btn" id="modeSkeleton" onclick="setGenMode('skeleton')">Skeleton Rig ❍</button>
+</div>
+<p style="font-size:12px;color:#888;margin-top:6px"><b>AI Prompt</b> = generate each pose with AI (slow, unique). <b>Skeleton Rig</b> = your reference image auto-warped into poses by a joint system (fast, consistent).</p>
+</div>
+
+<div class="settings-group">
+<div class="settings-label">Skeleton Type</div>
+<select class="settings-select" id="skeletonSel" onchange="setSkeletonType(this.value)">
+<option value="female">Female — Smaller shoulders, wider hips, graceful</option>
+<option value="male">Male — Broader shoulders, narrower hips, athletic</option>
+<option value="animal">Animal / Quadruped</option>
+<option value="custom">Custom …</option>
+</select>
+</div>
+
 <div class="settings-group">
 <div class="settings-label">Theme</div>
 <div class="settings-options">
@@ -830,7 +850,7 @@ document.addEventListener('keydown',function(e){
 });
 
 // \u2550\u2550\u2550 SETTINGS \u2550\u2550\u2550
-var SF_SETTINGS={theme:'dark',gameStyle:'fighter',lang:'en',cellSize:120,pollInterval:2};
+var SF_SETTINGS={theme:'dark',gameStyle:'fighter',lang:'en',cellSize:120,pollInterval:2,genMode:'ai',skeletonType:'female'};
 
 function loadSettings(){
   var raw=localStorage.getItem('sf_settings');
@@ -838,6 +858,7 @@ function loadSettings(){
   applyTheme(SF_SETTINGS.theme);
   document.getElementById('gameStyleSel').value=SF_SETTINGS.gameStyle;
   document.getElementById('langSel').value=SF_SETTINGS.lang;
+  document.getElementById('skeletonSel').value=SF_SETTINGS.skeletonType||'female';
   updateSettingsButtons();
   updateBgButtons();
 }
@@ -874,6 +895,8 @@ function setBgFromSettings(c,el){
     welcomeBtns[map[c]].classList.add('sel');
   }
 }
+function setGenMode(m){SF_SETTINGS.genMode=m;saveSettings();updateSettingsButtons();}
+function setSkeletonType(t){SF_SETTINGS.skeletonType=t;saveSettings();updateSettingsButtons();}
 function updateSettingsButtons(){
   ['themeDark','themeLight','themeAuto'].forEach(function(id){document.getElementById(id).classList.remove('primary')});
   var themeBtn={'dark':'themeDark','light':'themeLight','auto':'themeAuto'}[SF_SETTINGS.theme];
@@ -884,6 +907,10 @@ function updateSettingsButtons(){
   ['poll2','poll5','poll10'].forEach(function(id){document.getElementById(id).classList.remove('primary')});
   var pollBtn={'2':'poll2','5':'poll5','10':'poll10'}[SF_SETTINGS.pollInterval];
   if(pollBtn)document.getElementById(pollBtn).classList.add('primary');
+  // Mode buttons
+  ['modeAiPrompt','modeSkeleton'].forEach(function(id){document.getElementById(id).classList.remove('primary')});
+  var modeBtn={'ai':'modeAiPrompt','skeleton':'modeSkeleton'}[SF_SETTINGS.genMode||'ai'];
+  if(modeBtn)document.getElementById(modeBtn).classList.add('primary');
 }
 function updateBgButtons(){
   document.querySelectorAll('#settingsOvl .color-btn').forEach(function(b){b.classList.remove('sel')});
