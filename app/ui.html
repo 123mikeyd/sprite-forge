@@ -30,7 +30,7 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 .preview-img{border:2px solid #333;border-radius:4px;image-rendering:pixelated;max-width:100%}
 .cell-grid{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
 .cell-card{border:2px solid #333;border-radius:4px;background:#151515;cursor:pointer;overflow:hidden;position:relative;transition:border-color .15s}
-.cell-card:hover{border-color:#555}.cell-card.good{border-color:#3a6}.cell-card.bad{border-color:#a33}
+.cell-card:hover{border-color:#555}.cell-card.good{border-color:#3a6}.cell-card.bad{border-color:#a33}.cell-card.selected{border-color:#7af;box-shadow:0 0 8px rgba(120,170,255,.4)}
 .cell-card canvas{display:block;image-rendering:pixelated}
 .cell-card .lbl{padding:3px 5px;font-size:10px;color:#888;background:#111}
 .cell-card .badge{position:absolute;top:2px;right:2px;font-size:16px;font-weight:bold;text-shadow:0 0 4px #000}
@@ -49,6 +49,12 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 .color-btn:hover{transform:scale(1.1)}.color-btn.sel{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.3)}
 .color-btn.green{background:#00FF00}.color-btn.blue{background:#0088FF}.color-btn.magenta{background:#FF00FF}
 .color-label{font-size:12px;color:#888;text-align:center;margin-top:2px}
+.gait-pick{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap}
+.gait-card{border:2px solid #333;border-radius:8px;padding:12px 16px;background:#111;cursor:pointer;transition:border-color .2s,background .2s;min-width:160px;flex:1}
+.gait-card:hover{border-color:#555;background:#151515}
+.gait-card.sel{border-color:#7af;background:#1a1a2a;box-shadow:0 0 12px rgba(120,170,255,.2)}
+.gait-title{color:#7af;font-size:16px;font-weight:bold;margin-bottom:4px}
+.gait-desc{color:#888;font-size:12px;line-height:1.5}
 .overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:100;overflow-y:auto;padding:20px}
 .overlay.active{display:flex;justify-content:center;align-items:flex-start}
 .overlay-inner{background:#0e0e0e;border:1px solid #333;border-radius:8px;padding:24px;max-width:900px;width:100%;margin-top:40px}
@@ -93,7 +99,19 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 <div><div class="color-btn blue" onclick="pickBg('blue',this)"></div><div class="color-label">Blue</div></div>
 <div><div class="color-btn magenta sel" onclick="pickBg('magenta',this)"></div><div class="color-label">Magenta</div></div>
 </div>
-<div class="nav"><div></div><button class="btn primary" onclick="go(1)">Start →</button></div>
+<h3 class="mt">Pick a gait style</h3>
+<p>Walk/run style for your character's animation. This affects stride width, arm swing, bounce, and energy.</p>
+<div class="gait-pick">
+  <div class="gait-card sel" onclick="pickGait('female_walk',this)">
+    <div class="gait-title">Female Walk</div>
+    <div class="gait-desc">Graceful \u00b7 Moderate stride \u00b7 Subtle hip sway \u00b7 Arms close to body \u00b7 Minimal bounce</div>
+  </div>
+  <div class="gait-card" onclick="pickGait('male_run',this)">
+    <div class="gait-title">Male Run</div>
+    <div class="gait-desc">Aggressive \u00b7 Long stride \u00b7 Hard arm pump \u00b7 Lean forward \u00b7 Visible bounce</div>
+  </div>
+</div>
+<div class="nav"><div></div><button class="btn primary" onclick="go(1)">Start \u2192</button></div>
 </div>
 
 <!-- ═══ PAGE 1: CHARACTER ═══ -->
@@ -218,6 +236,7 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 
 <script>
 var bg='magenta',desc='',step=0,cells={},gridImg={};
+var gait='female_walk'; // 'female_walk' | 'male_run'
 var fixSt={prefix:'',sx:.5,sy:.5,img:null,sc:1};
 var prevFr=[],prevIdx=0,prevTmr=null,prevOn=true,prevFps=6;
 
@@ -226,7 +245,8 @@ var BG_HEX={green:'#00FF00',blue:'#0088FF',magenta:'#FF00FF'};
 
 var PROMPTS={
 reference:function(d){return 'Generate a single image: Side-view pixel art character for a 2D fighting game, character faces RIGHT. '+d+'. The character is in a neutral idle fighting stance \u2014 knees slightly bent, weight balanced between both feet, hands up in guard position near the chin. The entire character must be visible from head to feet with at least 10% padding on all sides so nothing is cut off. Character should be roughly 70% of the image height, centered horizontally. Style: crisp 16-bit pixel art with clean black outlines, saturated colors, similar to Street Fighter III or Skullgirls sprites. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' solid background behind the character. No text, no logos, no effects \u2014 just the character.'},
-idle_walk:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS (at least 4px) clearly separating 4 cells of equal size. Cell 1 (top-left): IDLE \u2014 standing still in guard stance, both feet planted, hands up. Cell 2 (top-right): WALK step 1 \u2014 RIGHT foot forward, LEFT foot back, LEFT arm swings forward, RIGHT arm swings back. Cell 3 (bottom-left): WALK step 2 \u2014 MIDSTRIDE passing position, both legs crossing near center, body at lowest point, arms at sides. Cell 4 (bottom-right): WALK step 3 \u2014 LEFT foot forward, RIGHT foot back, RIGHT arm swings forward, LEFT arm swings back (mirror of cell 2). Each character must be fully contained in its cell, same size, centered. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'},
+idle_walk:function(d){return gait==='female_walk'?'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS (at least 4px) clearly separating 4 cells of equal size. Camera LOCKED to side view \u2014 NEVER front, NEVER back, NEVER 3/4, same exact angle in every cell. Female walk style: graceful, moderate stride width, subtle hip sway, arms swing close to torso, minimal vertical bounce.\n\nCell 1 (top-left): IDLE \u2014 standing still in guard stance, both feet FLAT on ground planted shoulder-width apart, hands raised near chin, weight perfectly balanced, zero movement.\n\nCell 2 (top-right): WALK CONTACT-LEFT \u2014 left heel strikes ground AHEAD of body, right foot pushes off from BEHIND on toes, feet are WIDELY SPREAD apart both touching the ground, left knee slightly bent, right leg extended back, body leaning slightly forward. LEFT arm swings BACK gently, RIGHT arm swings FORWARD gently.\n\nCell 3 (bottom-left): WALK PASSING \u2014 left foot carries full weight FLAT under body, right foot is COMPLETELY LIFTED OFF THE GROUND with right knee bent and raised up past left shin, hips at their LOWEST point, body slightly squashed down. Arms held close to torso. Graceful feminine passing pose.\n\nCell 4 (bottom-right): WALK CONTACT-RIGHT \u2014 right heel strikes ground AHEAD of body, left foot pushes off from BEHIND on toes, feet WIDELY SPREAD apart both touching the ground, right knee slightly bent, left leg extended back, body leaning forward. RIGHT arm swings BACK gently, LEFT arm swings FORWARD gently.\n\nIMPORTANT: Cells 2 and 4 must show TWO FEET ON THE GROUND spread wide. Cell 3 must show ONE FOOT OFF THE GROUND with a raised knee. Each cell must have a VISIBLY DIFFERENT silhouette. No two cells may share the same leg position. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell. Clean 16-bit pixel art with black outlines, Street Fighter III style.':
+'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS (at least 4px) clearly separating 4 cells of equal size. Camera LOCKED to side view \u2014 NEVER front, NEVER back, NEVER 3/4, same exact angle in every cell. Male run style: aggressive, long stride, visible vertical bounce, arms pump hard with elbows bent 90 degrees, body leans forward into the movement.\n\nCell 1 (top-left): IDLE \u2014 standing still in guard stance, both feet FLAT on ground planted shoulder-width apart, hands raised near chin, weight perfectly balanced, zero movement.\n\nCell 2 (top-right): RUN CONTACT-LEFT \u2014 left foot strikes ground FORWARD with long aggressive stride, right foot far behind PUSHING OFF on toes, both feet widely separated, body leaning forward into the run, torso angled. LEFT arm pumps BACK hard with elbow bent 90 degrees, RIGHT arm drives FORWARD hard.\n\nCell 3 (bottom-left): RUN MIDSTRIDE-AIRBORNE \u2014 both feet COMPLETELY OFF THE GROUND, left leg tucked back, right knee raised HIGH in front, body at HIGHEST point with visible vertical bounce, torso leaned forward. Arms crossed tight or pulled back for momentum.\n\nCell 4 (bottom-right): RUN CONTACT-RIGHT \u2014 right foot strikes ground FORWARD with long aggressive stride, left foot far behind PUSHING OFF on toes, both feet widely separated, body leaning forward. RIGHT arm pumps BACK hard, LEFT arm drives FORWARD hard (exact opposite of cell 2).\n\nIMPORTANT: This is an AGGRESSIVE RUN not a walk. Maximum stride width, visible bounce, hard arm pump. Cells 2 and 4 show two feet on ground in wide contact. Cell 3 shows both feet airborne with a raised knee. Each cell must have a VISIBLY DIFFERENT silhouette. No two cells may share the same leg position. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell. Clean 16-bit pixel art with black outlines, Street Fighter III style.'},
 punch_kick:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS separating 4 cells. Cell 1 (top-left): PUNCH wind-up \u2014 pulling right fist back near shoulder, torso twisting to load power, weight on back foot. Cell 2 (top-right): PUNCH impact \u2014 right fist fully extended forward at full reach, torso rotated forward, weight on front foot. Cell 3 (bottom-left): KICK chamber \u2014 right knee raised high to chest, leaning back slightly, arms out for balance. Cell 4 (bottom-right): KICK impact \u2014 right leg fully extended horizontally, foot at full reach, body leaning back. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'},
 jump_special:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS separating 4 cells. Cell 1 (top-left): JUMP crouch \u2014 squatting low before jump, knees deeply bent, arms pulling back for launch. Cell 2 (top-right): JUMP rise \u2014 body going up, legs tucking slightly, arms raised. Cell 3 (bottom-left): JUMP kick \u2014 body horizontal in air, right leg extended forward in flying kick. Cell 4 (bottom-right): SPECIAL MOVE \u2014 standing on ground, both arms thrust forward, energy projectile launching from hands. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'},
 hurt_knockdown:function(d){return 'Generate a single image: Side-view pixel art sprite sheet for 2D fighting game, character faces RIGHT. '+d+'. A 2x2 grid with THICK BLACK BORDERS separating 4 cells. Cell 1 (top-left): HIT reaction \u2014 getting punched, head snapping back, body recoiling. Cell 2 (top-right): KNOCKDOWN \u2014 falling backward, body almost horizontal. Cell 3 (bottom-left): ON GROUND \u2014 lying on back, defeated. Cell 4 (bottom-right): GETTING UP \u2014 on one knee, pushing off ground to stand. Bright '+bg.toUpperCase()+' '+BG_HEX[bg]+' background each cell.'}
@@ -258,6 +278,12 @@ function jumpTo(p){
 function pickBg(c,el){
   bg=c;
   document.querySelectorAll('.color-btn').forEach(function(b){b.classList.remove('sel')});
+  el.classList.add('sel');
+}
+
+function pickGait(g,el){
+  gait=g;
+  document.querySelectorAll('.gait-card').forEach(function(b){b.classList.remove('sel')});
   el.classList.add('sel');
 }
 
@@ -350,6 +376,8 @@ function cropAndDisplay(canvas,img,bgType){
 }
 
 function toggleCard(card,p,i){
+  document.querySelectorAll('#'+p+'G .cell-card').forEach(function(c){c.classList.remove('selected')});
+  card.classList.add('selected');
   var d=cells[p][i];
   if(d.status!=='good'){d.status='good';card.classList.remove('bad');card.classList.add('good');card.querySelector('.badge').textContent='\u2713'}
   else{d.status='rejected';card.classList.remove('good');card.classList.add('bad');card.querySelector('.badge').textContent='\u2717'}
@@ -389,7 +417,7 @@ function uploadGrid(input,stepKey){
         cv.getContext('2d').drawImage(img,col*cw,r*ch,cw,ch,0,0,cw,ch);
         c.push({index:r*2+col,image:cv.toDataURL('image/png'),path:'upload_'+(r*2+col)+'.png'});
       }}
-      gridImg[m]={cells:c};
+      gridImg[m]={cells:c,grid:e.target.result};
       renderCells(m,c);
       document.getElementById(m+'C').classList.remove('hidden');
     };
@@ -443,10 +471,13 @@ function updateFixPrev(){
     ctx.drawImage(img,r[0],r[1],r[2],r[3],0,0,cv.width,cv.height);
     // chroma key preview
     var id=ctx.getImageData(0,0,cv.width,cv.height),d=id.data;
-    for(var p=0;p<d.length;p+=4){
-      if(d[p]>200&&d[p+1]<50&&d[p+2]>200)d[p+3]=0;
-      if(d[p]<80&&d[p+1]>160&&d[p+2]<80)d[p+3]=0;
-      if(d[p]<80&&d[p+1]<80&&d[p+2]>160)d[p+3]=0;
+    for(var px=0;px<d.length;px+=4){
+      var r=d[px],g=d[px+1],b=d[px+2];
+      var isBg=false;
+      if(bg==='green')isBg=(r<80&&g>160&&b<80);
+      else if(bg==='blue')isBg=(r<80&&g<80&&b>160);
+      else isBg=(r>200&&g<50&&b>200);
+      if(isBg)d[px+3]=0;
     }
     ctx.putImageData(id,0,0);
     var lbl=document.createElement('div');lbl.className='plbl';lbl.textContent='Cell '+(i+1)+': '+r[2]+'x'+r[3];
@@ -528,7 +559,10 @@ function tickPrev(){
   for(var y=0;y<tmp.height;y++){for(var x=0;x<tmp.width;x++){
     var idx=(y*tmp.width+x)*4;
     var r=d[idx],g=d[idx+1],b=d[idx+2];
-    var isBg=(r>200&&g<50&&b>200)||(r<80&&g>160&&b<80)||(r<80&&g<80&&b>160);
+    var isBg=false;
+    if(bg==='green')isBg=(r<80&&g>160&&b<80);
+    else if(bg==='blue')isBg=(r<80&&g<80&&b>160);
+    else isBg=(r>200&&g<50&&b>200);
     if(!isBg){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y)}
     if(isBg)d[idx+3]=0;
   }}
@@ -570,6 +604,19 @@ function closePrev(){
   if(prevTmr)clearInterval(prevTmr);
   document.getElementById('prevOvl').classList.remove('active');
 }
+
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  var sel=document.querySelector('.cell-card.selected');
+  if(!sel)return;
+  var p=sel.dataset.p,i=parseInt(sel.dataset.i);
+  if(e.key==='g'||e.key==='G'){
+    cells[p][i].status='good';sel.classList.remove('bad');sel.classList.add('good');sel.querySelector('.badge').textContent='\u2713';updateStat(p);
+  }
+  if(e.key==='b'||e.key==='B'){
+    cells[p][i].status='rejected';sel.classList.remove('good');sel.classList.add('bad');sel.querySelector('.badge').textContent='\u2717';updateStat(p);
+  }
+});
 
 // ══ INIT ══
 dots();

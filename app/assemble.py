@@ -10,15 +10,23 @@ OUTPUT_DIR = os.path.join(APP_DIR, "output")
 TARGET = (96, 96)
 GAP = 4
 
-def chroma_key(img):
-    """Remove magenta background, crop tight, scale to fit TARGET."""
+def chroma_key(img, bg='magenta'):
+    """Remove background, crop tight, scale to fit TARGET."""
     arr = np.array(img.convert("RGBA"))
     h, w = arr.shape[:2]
+
+    def _is_bg(r, g, b):
+        if bg == 'green':
+            return r < 80 and g > 160 and b < 80
+        if bg == 'blue':
+            return r < 80 and g < 80 and b > 160
+        return r > 200 and g < 50 and b > 200
+
     mask = np.zeros((h, w), dtype=bool)
     for y in range(h):
         for x in range(w):
             r, g, b = int(arr[y,x,0]), int(arr[y,x,1]), int(arr[y,x,2])
-            if not (r > 200 and g < 50 and b > 200):
+            if not _is_bg(r, g, b):
                 mask[y, x] = True
     if not np.any(mask):
         return Image.new("RGBA", TARGET, (0,0,0,0))
@@ -31,7 +39,7 @@ def chroma_key(img):
     ca = np.array(crop)
     for y in range(ca.shape[0]):
         for x in range(ca.shape[1]):
-            if ca[y,x,0] > 200 and ca[y,x,1] < 50 and ca[y,x,2] > 200:
+            if _is_bg(ca[y,x,0], ca[y,x,1], ca[y,x,2]):
                 ca[y,x,3] = 0
     clean = Image.fromarray(ca)
     cw, ch = clean.size

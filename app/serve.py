@@ -3,7 +3,7 @@
 import os, json
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-PORT = 5000
+PORT = 5001
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(APP_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)

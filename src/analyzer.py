@@ -457,7 +457,7 @@ def density_barcode(img_arr, y1, y2, x1, x2, bg_mode="auto"):
             elif bg_mode == "light" and not is_light_bg(r, g, b):
                 d += 1
             else:
-                d += 1
+                pass
 
         if d == 0:
             barcode += "."

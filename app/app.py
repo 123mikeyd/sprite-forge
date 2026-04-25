@@ -179,23 +179,28 @@ def split_grid(image_path: str, cols: int = 2, rows: int = 2) -> list:
     return cells
 
 
-def chroma_key_and_crop(img: Image.Image, target_size=(96, 96)) -> Image.Image:
-    """Remove green background, crop tight, scale to fit, center in target."""
+def chroma_key_and_crop(img: Image.Image, target_size=(96, 96), bg="magenta") -> Image.Image:
+    """Remove background, crop tight, scale to fit, center in target."""
     arr = np.array(img)
     h, w = arr.shape[:2]
 
-    # Green screen mask
+    def _is_bg(r, g, b):
+        if bg == "green":
+            return r < 80 and g > 160 and b < 80
+        if bg == "blue":
+            return r < 80 and g < 80 and b > 160
+        return r > 200 and g < 50 and b > 200
+
     mask = np.zeros((h, w), dtype=bool)
     for y in range(h):
         for x in range(w):
             r, g, b = int(arr[y, x, 0]), int(arr[y, x, 1]), int(arr[y, x, 2])
-            if not (r > 200 and g < 50 and b > 200):
+            if not _is_bg(r, g, b):
                 mask[y, x] = True
 
     if not np.any(mask):
         return Image.new("RGBA", target_size, (0, 0, 0, 0))
 
-    # Tight bounding box
     rows_any = np.any(mask, axis=1)
     cols_any = np.any(mask, axis=0)
     rmin, rmax = np.where(rows_any)[0][[0, -1]]
@@ -206,19 +211,15 @@ def chroma_key_and_crop(img: Image.Image, target_size=(96, 96)) -> Image.Image:
     rmax = min(h - 1, rmax + pad)
     cmax = min(w - 1, cmax + pad)
 
-    # Crop + make green transparent
-    crop = img.crop((cmin, rmin, cmax + 1, cmax + 1)).convert("RGBA")
-    # Actually cmax is for columns, fix:
     crop = img.crop((cmin, rmin, cmax + 1, rmax + 1)).convert("RGBA")
     crop_arr = np.array(crop)
     for y in range(crop_arr.shape[0]):
         for x in range(crop_arr.shape[1]):
             r, g, b = int(crop_arr[y, x, 0]), int(crop_arr[y, x, 1]), int(crop_arr[y, x, 2])
-            if r > 200 and g < 50 and b > 200:
+            if _is_bg(r, g, b):
                 crop_arr[y, x, 3] = 0
     clean = Image.fromarray(crop_arr)
 
-    # Scale to fit
     cw, ch = clean.size
     if cw == 0 or ch == 0:
         return Image.new("RGBA", target_size, (0, 0, 0, 0))
@@ -227,7 +228,6 @@ def chroma_key_and_crop(img: Image.Image, target_size=(96, 96)) -> Image.Image:
     nh = max(1, int(ch * scale))
     scaled = clean.resize((nw, nh), Image.NEAREST)
 
-    # Center
     result = Image.new("RGBA", target_size, (0, 0, 0, 0))
     px = (target_size[0] - nw) // 2
     py = (target_size[1] - nh) // 2
@@ -1034,6 +1034,8 @@ function renderCells(gridEl, cells, stepKey) {
 }
 
 function toggleCell(card) {
+  document.querySelectorAll('.cell-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
   const status = card.dataset.status;
   if (status === 'unmarked' || status === 'rejected') {
     card.dataset.status = 'good';

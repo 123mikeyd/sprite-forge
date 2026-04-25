@@ -24,3 +24,7 @@ Thumbs.db
 
 # Fal.ai cache
 .fal/
+# Generated output
+app/output/
+output/
+
