@@ -1,8 +1,0 @@
-{
-  "step": "idle_walk",
-  "ready": true,
-  "image": "/output/idle_walk_grid.png",
-  "path": "/home/mikeyd/.hermes/sprite-forge/app/output/idle_walk_grid.png",
-  "grid": "/output/idle_walk_grid.png",
-  "prompt": "Golden Retriever superhero boxer run cycle"
-}

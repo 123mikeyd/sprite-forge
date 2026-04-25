@@ -6,6 +6,29 @@
 <title>Sprite Forge</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0a;--fg:#d8d8d8;--card:#151515;--border:#333;--border-hover:#555;--heading:#7af;--accent:#afa;--danger:#faa;--code-bg:#1a1a2a;--code-fg:#afa;--input-bg:#111;--input-fg:#ddd;--overlay-bg:rgba(0,0,0,.85);--overlay-inner:#0e0e0e;--status-bg:#111;--prompt-bg:#111}
+body.light{--bg:#e8e8e8;--fg:#222;--card:#f5f5f5;--border:#ccc;--border-hover:#999;--heading:#25a;--accent:#163;--danger:#a33;--code-bg:#e0e8e0;--code-fg:#163;--input-bg:#fff;--input-fg:#222;--overlay-bg:rgba(0,0,0,.5);--overlay-inner:#f0f0f0;--status-bg:#ddd;--prompt-bg:#e8e8e8}
+body{background:var(--bg);color:var(--fg);transition:background .3s,color .3s}
+body.light .btn{background:#d0d8e0;color:#25a;border-color:#89a}
+body.light .btn:hover{background:#c0cce0;border-color:#25a}
+body.light .btn.primary{background:#c8e0d0;border-color:#3a6;color:#163}
+body.light .btn.danger{background:#e0c8c8;border-color:#a33;color:#a33}
+body.light .cell-card{background:var(--card);border-color:var(--border)}
+body.light .cell-card:hover{border-color:var(--border-hover)}
+body.light .status-bar{background:var(--status-bg);border-color:var(--border)}
+body.light .prompt-box{background:var(--prompt-bg);border-color:var(--border);color:var(--fg)}
+body.light textarea{background:var(--input-bg);color:var(--input-fg);border-color:var(--border)}
+body.light .overlay-inner{background:var(--overlay-inner)}
+body.light .anim-input{background:var(--input-bg);color:var(--input-fg);border-color:var(--border)}
+.settings-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px}
+.settings-btn{background:transparent;border:1px solid var(--border);color:var(--heading);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s;flex-shrink:0}
+.settings-btn:hover{background:var(--card);border-color:var(--heading)}
+.settings-group{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.settings-label{font-weight:bold;color:var(--heading);margin-bottom:8px;font-size:14px}
+.settings-options{display:flex;gap:8px;flex-wrap:wrap}
+.settings-select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--border);padding:8px 12px;font-family:inherit;font-size:14px;border-radius:4px;cursor:pointer;width:100%;max-width:280px}
+.settings-select:disabled{color:#888;opacity:.7}
+.settings-tag{display:inline-block;background:var(--card);border:1px solid var(--border);color:#888;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:8px}
 body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#d8d8d8;min-height:100vh;padding:20px}
 .page{display:none;max-width:900px;margin:0 auto}.page.active{display:block}
 h1{color:#7af;font-size:28px;margin-bottom:8px}
@@ -85,8 +108,11 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 </head>
 <body>
 
-<!-- STEP DOTS -->
+<!-- STEP DOTS + SETTINGS -->
+<div class="settings-bar">
 <div class="steps" id="stepDots"></div>
+<button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+</div>
 
 <!-- ═══ PAGE 0: WELCOME ═══ -->
 <div class="page active" id="p0">
@@ -245,6 +271,79 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 </div>
 </div>
 
+<!-- \u2550\u2550\u2550 SETTINGS MODAL \u2550\u2550\u2550 -->
+<div class="overlay" id="settingsOvl">
+<div class="overlay-inner" style="max-width:500px">
+<div class="overlay-title">Settings</div>
+<div class="overlay-hint">Configure Sprite Forge preferences. All settings are saved automatically.</div>
+
+<div class="settings-group">
+<div class="settings-label">Theme</div>
+<div class="settings-options">
+<button class="btn" id="themeDark" onclick="setTheme('dark')">Dark</button>
+<button class="btn" id="themeLight" onclick="setTheme('light')">Light</button>
+<button class="btn" id="themeAuto" onclick="setTheme('auto')">Auto</button>
+</div>
+</div>
+
+<div class="settings-group">
+<div class="settings-label">Game Style</div>
+<select class="settings-select" id="gameStyleSel" onchange="setGameStyle(this.value)">
+<option value="fighter">2D Fighter</option>
+<option value="platformer" disabled>Platformer (Coming Soon)</option>
+<option value="shmup" disabled>Shoot 'em Up (Coming Soon)</option>
+<option value="rpg" disabled>RPG (Coming Soon)</option>
+<option value="beatemup" disabled>Beat 'em Up (Coming Soon)</option>
+</select>
+<p style="font-size:12px;color:#888;margin-top:6px">Changing style will reload the available animation templates.</p>
+</div>
+
+<div class="settings-group">
+<div class="settings-label">Language</div>
+<select class="settings-select" id="langSel" onchange="setLang(this.value)">
+<option value="en">English</option>
+</select>
+<p style="font-size:12px;color:#888;margin-top:6px">More languages coming in a future update.</p>
+</div>
+
+<div class="settings-group">
+<div class="settings-label">Cell Display Size</div>
+<div class="settings-options">
+<button class="btn" id="cell80" onclick="setCellSize(80)">Small</button>
+<button class="btn" id="cell120" onclick="setCellSize(120)">Medium</button>
+<button class="btn" id="cell160" onclick="setCellSize(160)">Large</button>
+</div>
+</div>
+
+<div class="settings-group">
+<div class="settings-label">Auto-poll Interval</div>
+<div class="settings-options">
+<button class="btn" id="poll2" onclick="setPollInterval(2)">2s</button>
+<button class="btn" id="poll5" onclick="setPollInterval(5)">5s</button>
+<button class="btn" id="poll10" onclick="setPollInterval(10)">10s</button>
+</div>
+</div>
+
+<div class="settings-group">
+<div class="settings-label">Background Color</div>
+<div class="color-pick">
+<div><div class="color-btn green" id="setBgGreen" onclick="setBgFromSettings('green',this)"></div><div class="color-label">Green</div></div>
+<div><div class="color-btn blue" id="setBgBlue" onclick="setBgFromSettings('blue',this)"></div><div class="color-label">Blue</div></div>
+<div><div class="color-btn magenta sel" id="setBgMagenta" onclick="setBgFromSettings('magenta',this)"></div><div class="color-label">Magenta</div></div>
+</div>
+</div>
+
+<div class="settings-group" style="border-bottom:none">
+<div class="settings-label">Danger Zone</div>
+<button class="btn danger" onclick="resetAll()">Reset All Progress</button>
+</div>
+
+<div class="flex mt">
+<button class="btn primary" onclick="closeSettings()">Done</button>
+</div>
+</div>
+</div>
+
 <script>
 var bg='magenta',desc='',step=0,cells={},gridImg={};
 var gait='female_walk'; // 'female_walk' | 'male_run'
@@ -318,11 +417,12 @@ function gen(key){
 var pollIv=null;
 function poll(key){
   if(pollIv)clearInterval(pollIv);
+  var interval=(SF_SETTINGS.pollInterval||2)*1000;
   pollIv=setInterval(function(){
     fetch('/output/latest.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
       if(d.step===key&&d.ready){clearInterval(pollIv);onReady(key,d)}
     }).catch(function(){})
-  },2000);
+  },interval);
 }
 
 function onReady(key,d){
@@ -379,7 +479,8 @@ function cropAndDisplay(canvas,img,bgType){
   var pad=8;minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);
   maxX=Math.min(tmp.width-1,maxX+pad);maxY=Math.min(tmp.height-1,maxY+pad);
   var cw=maxX-minX+1,ch=maxY-minY+1;
-  var ds=120,sc=Math.min(ds/cw,ds/ch,1);
+  var ds=SF_SETTINGS.cellSize||120;
+  var sc=Math.min(ds/cw,ds/ch,1);
   var dw=Math.max(1,Math.round(cw*sc)),dh=Math.max(1,Math.round(ch*sc));
   canvas.width=dw;canvas.height=dh;canvas.style.width=dw+'px';canvas.style.height=dh+'px';
   var ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
@@ -712,11 +813,80 @@ document.addEventListener('keydown',function(e){
   }
 });
 
+// \u2550\u2550\u2550 SETTINGS \u2550\u2550\u2550
+var SF_SETTINGS={theme:'dark',gameStyle:'fighter',lang:'en',cellSize:120,pollInterval:2};
+
+function loadSettings(){
+  var raw=localStorage.getItem('sf_settings');
+  if(raw)try{SF_SETTINGS=JSON.parse(raw)}catch(e){}
+  applyTheme(SF_SETTINGS.theme);
+  document.getElementById('gameStyleSel').value=SF_SETTINGS.gameStyle;
+  document.getElementById('langSel').value=SF_SETTINGS.lang;
+  updateSettingsButtons();
+  updateBgButtons();
+}
+function saveSettings(){localStorage.setItem('sf_settings',JSON.stringify(SF_SETTINGS));}
+
+function openSettings(){document.getElementById('settingsOvl').classList.add('active');updateSettingsButtons();updateBgButtons();}
+function closeSettings(){document.getElementById('settingsOvl').classList.remove('active');}
+
+function setTheme(t){
+  SF_SETTINGS.theme=t;
+  applyTheme(t);
+  saveSettings();
+  updateSettingsButtons();
+}
+function applyTheme(t){
+  var sys=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);
+  var active=(t==='auto'?(sys?'light':'dark'):t);
+  if(active==='light')document.body.classList.add('light');
+  else document.body.classList.remove('light');
+}
+function setGameStyle(s){SF_SETTINGS.gameStyle=s;saveSettings();}
+function setLang(l){SF_SETTINGS.lang=l;saveSettings();}
+function setCellSize(sz){SF_SETTINGS.cellSize=sz;saveSettings();updateSettingsButtons();}
+function setPollInterval(sec){SF_SETTINGS.pollInterval=sec;saveSettings();updateSettingsButtons();}
+function setBgFromSettings(c,el){
+  bg=c;
+  document.querySelectorAll('#settingsOvl .color-btn').forEach(function(b){b.classList.remove('sel')});
+  el.classList.add('sel');
+  saveSettings();
+  var map={green:0,blue:1,magenta:2};
+  var welcomeBtns=document.querySelectorAll('#p0 .color-btn');
+  if(welcomeBtns[map[c]]){
+    welcomeBtns.forEach(function(b){b.classList.remove('sel')});
+    welcomeBtns[map[c]].classList.add('sel');
+  }
+}
+function updateSettingsButtons(){
+  ['themeDark','themeLight','themeAuto'].forEach(function(id){document.getElementById(id).classList.remove('primary')});
+  var themeBtn={'dark':'themeDark','light':'themeLight','auto':'themeAuto'}[SF_SETTINGS.theme];
+  if(themeBtn)document.getElementById(themeBtn).classList.add('primary');
+  ['cell80','cell120','cell160'].forEach(function(id){document.getElementById(id).classList.remove('primary')});
+  var cellBtn={'80':'cell80','120':'cell120','160':'cell160'}[SF_SETTINGS.cellSize];
+  if(cellBtn)document.getElementById(cellBtn).classList.add('primary');
+  ['poll2','poll5','poll10'].forEach(function(id){document.getElementById(id).classList.remove('primary')});
+  var pollBtn={'2':'poll2','5':'poll5','10':'poll10'}[SF_SETTINGS.pollInterval];
+  if(pollBtn)document.getElementById(pollBtn).classList.add('primary');
+}
+function updateBgButtons(){
+  document.querySelectorAll('#settingsOvl .color-btn').forEach(function(b){b.classList.remove('sel')});
+  var map={green:'setBgGreen',blue:'setBgBlue',magenta:'setBgMagenta'};
+  var el=document.getElementById(map[bg]);
+  if(el)el.classList.add('sel');
+}
+function resetAll(){
+  if(!confirm('Clear all progress, settings, and saved frames? This cannot be undone.'))return;
+  localStorage.removeItem('sf_step');localStorage.removeItem('sf_wait');localStorage.removeItem('sf_bg');localStorage.removeItem('sf_settings');
+  location.reload();
+}
+
 // ══ INIT ══
 dots();
 var savedStep=parseInt(localStorage.getItem('sf_step')||'0');
 if(savedStep>0)go(savedStep);
 if(localStorage.getItem('sf_wait')){poll(localStorage.getItem('sf_wait'))}
+loadSettings();
 </script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 # Sprite Forge
 
-AI-powered sprite sheet generation with iterative user review.
+AI-powered sprite sheet generation with iterative user review. Genre-aware templates, per-frame analysis, smart regen.
 
-**Private repo — do not share until ready.**
+**Now public — work in progress.**
 
 ## The Problem
 
