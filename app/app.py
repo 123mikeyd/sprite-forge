@@ -300,12 +300,37 @@ def assemble_sheet(frames_by_anim: dict, cell_size=(96, 96), gap=4) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# API ROUTES
+# STATIC FILE SERVING
 # ═══════════════════════════════════════════════════════════════════════
+
+@app.route("/ui.html")
+def serve_ui():
+    """Serve the self-contained UI."""
+    ui_path = os.path.join(os.path.dirname(__file__), "ui.html")
+    return render_template_string(open(ui_path, "r", encoding="utf-8").read())
+
 
 @app.route("/")
 def index():
-    return render_template_string(UI_HTML)
+    return serve_ui()
+
+
+@app.route("/output/idle_walk_grid.png")
+def serve_idle_walk():
+    return send_file(os.path.join(OUTPUT_DIR, "idle_walk_grid.png"))
+
+
+@app.route("/output/reference.png")
+def serve_reference():
+    return send_file(os.path.join(OUTPUT_DIR, "reference.png"))
+
+
+@app.route("/output/latest.json")
+def serve_latest():
+    latest = os.path.join(OUTPUT_DIR, "latest.json")
+    if os.path.exists(latest):
+        return send_file(latest)
+    return jsonify({"ready": False}), 404
 
 
 
@@ -1209,7 +1234,7 @@ if __name__ == "__main__":
     print("=" * 50)
     print("  Sprite Forge — 2D Fighter Generator")
     print("=" * 50)
-    print(f"  Open: http://localhost:5000")
+    print(f"  Open: http://localhost:5001")
     print(f"  Output: {OUTPUT_DIR}")
     if not FAL_KEY:
         print(f"  ⚠ FAL_KEY not set — set it with:")
@@ -1217,4 +1242,4 @@ if __name__ == "__main__":
     else:
         print(f"  ✓ FAL_KEY configured")
     print("=" * 50)
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5001, debug=False)
