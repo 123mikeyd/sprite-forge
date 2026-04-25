@@ -68,6 +68,8 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 .fix-line::after{content:'';position:absolute;background:#ff0;border-radius:50%;width:14px;height:14px}
 .fix-line.h::after{left:50%;top:-5px;transform:translateX(-50%)}
 .fix-line.v::after{top:50%;left:-5px;transform:translateY(-50%)}
+.fix-box{position:absolute;border:2px dashed #ff0;background:rgba(255,255,0,.1);z-index:11;display:none;cursor:move}
+.fix-box.active{display:block}
 .fix-previews{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .fix-preview{border:2px solid #444;border-radius:4px;overflow:hidden;background:#111}
 .fix-preview canvas{display:block;image-rendering:pixelated}
@@ -119,7 +121,11 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 <h2>Step 1: Your Character</h2>
 <p>Describe your character. Be specific about colors, clothing, body type.</p>
 <textarea id="desc" rows="3" placeholder="Example: A humanoid shiba inu with a red cape, standing on back feet, front paws up like fists"></textarea>
-<div class="mt"><button class="btn primary" onclick="gen('reference')">Generate Reference</button></div>
+<div class="mt flex">
+  <button class="btn primary" onclick="gen('reference')">Generate Reference</button>
+  <span style="color:#555">or</span>
+  <label class="btn" style="cursor:pointer"><input type="file" accept="image/*" style="display:none" onchange="uploadRef(this)">Upload Image</label>
+</div>
 <div id="refP" class="hidden mt"><h3>Send this to Hermes:</h3><div class="prompt-box" id="refPT" onclick="copyTxt(this)"></div>
 <div class="waiting" id="refW"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><p style="margin-top:8px">Waiting for image...</p></div></div>
 <div id="refV" class="hidden"><img id="refI" class="preview-img mt" style="max-width:300px">
@@ -203,15 +209,20 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 <div class="mt"><button class="btn" onclick="go(0)">↻ Start Over</button></div>
 </div>
 
-<!-- ═══ FIX MODAL ═══ -->
+<!-- \u2550\u2550\u2550 FIX MODAL \u2550\u2550\u2550 -->
 <div class="overlay" id="fixOvl">
 <div class="overlay-inner">
-<div class="overlay-title">Fix Frames — Adjust Crop</div>
-<div class="overlay-hint">Drag the <b style="color:#ff0">yellow lines</b> to adjust where each frame is cut. Click <b>Apply</b> when centered.</div>
+<div class="overlay-title">Fix Frames \u2014 Adjust Crop</div>
+<div class="overlay-hint" id="fixHint">Grid Mode: Drag the <b style="color:#ff0">yellow lines</b> to adjust where each frame is cut. Or switch to <b>Box Mode</b> to draw a selection box.</div>
+<div class="flex mt">
+  <button class="btn primary" id="btnGridMode" onclick="setFixMode('grid')">Grid Mode</button>
+  <button class="btn" id="btnBoxMode" onclick="setFixMode('box')">Box Mode</button>
+</div>
 <div class="fix-canvas-wrap" id="fixWrap">
 <canvas id="fixCv"></canvas>
 <div class="fix-line h" id="fixH" style="top:50%"></div>
 <div class="fix-line v" id="fixV" style="left:50%"></div>
+<div class="fix-box" id="fixBox"></div>
 </div>
 <h3>Preview</h3>
 <div class="fix-previews" id="fixPrev"></div>
@@ -237,7 +248,7 @@ textarea{width:100%;background:#111;color:#ddd;border:1px solid #333;padding:10p
 <script>
 var bg='magenta',desc='',step=0,cells={},gridImg={};
 var gait='female_walk'; // 'female_walk' | 'male_run'
-var fixSt={prefix:'',sx:.5,sy:.5,img:null,sc:1};
+var fixSt={prefix:'',sx:.5,sy:.5,img:null,sc:1,mode:'grid',box:{x:0,y:0,w:0,h:0,active:false}};
 var prevFr=[],prevIdx=0,prevTmr=null,prevOn=true,prevFps=6;
 
 var STEP_NAMES=['Welcome','Reference','Idle+Walk','Punch+Kick','Jump+Special','Hit Reactions','Final'];
@@ -403,6 +414,16 @@ function rst(page){
 }
 
 // ══ UPLOAD ══
+function uploadRef(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    document.getElementById('refI').src=e.target.result;
+    document.getElementById('refV').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
 function uploadGrid(input,stepKey){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
@@ -426,7 +447,19 @@ function uploadGrid(input,stepKey){
   reader.readAsDataURL(file);
 }
 
-// ══ FIX TOOL ══
+// \u2550\u2550 FIX TOOL \u2550\u2550
+function setFixMode(mode){
+  fixSt.mode=mode;
+  document.getElementById('btnGridMode').className=mode==='grid'?'btn primary':'btn';
+  document.getElementById('btnBoxMode').className=mode==='box'?'btn primary':'btn';
+  var hint=mode==='grid'?'Grid Mode: Drag the <b style="color:#ff0">yellow lines</b> to adjust where each frame is cut.':'Box Mode: Click and drag on the image to draw a selection box around one sprite.';
+  document.getElementById('fixHint').innerHTML=hint;
+  document.getElementById('fixH').style.display=mode==='grid'?'block':'none';
+  document.getElementById('fixV').style.display=mode==='grid'?'block':'none';
+  document.getElementById('fixBox').style.display=mode==='box'?'block':'none';
+  updateFixPrev();
+}
+
 function openFix(prefix){
   fixSt.prefix=prefix;
   var data=gridImg[prefix];
@@ -440,69 +473,124 @@ function openFix(prefix){
     cv.getContext('2d').imageSmoothingEnabled=false;
     cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
     fixSt.sc=sc;fixSt.sx=.5;fixSt.sy=.5;
+    fixSt.box={x:cv.width*.25,y:cv.height*.25,w:cv.width*.5,h:cv.height*.5,active:true};
     document.getElementById('fixH').style.top=(cv.height/2)+'px';
     document.getElementById('fixV').style.left=(cv.width/2)+'px';
+    updateFixBox();
     updateFixPrev();
     document.getElementById('fixOvl').classList.add('active');
+    setFixMode('grid');
   };
   img.src=data.grid;
+}
+
+function updateFixBox(){
+  var b=document.getElementById('fixBox');
+  if(!fixSt.box.active){b.classList.remove('active');return}
+  b.classList.add('active');
+  b.style.left=fixSt.box.x+'px';
+  b.style.top=fixSt.box.y+'px';
+  b.style.width=fixSt.box.w+'px';
+  b.style.height=fixSt.box.h+'px';
 }
 
 function closeFix(){document.getElementById('fixOvl').classList.remove('active')}
 function resetFix(){
   var cv=document.getElementById('fixCv');
   fixSt.sx=.5;fixSt.sy=.5;
+  fixSt.box={x:cv.width*.25,y:cv.height*.25,w:cv.width*.5,h:cv.height*.5,active:true};
   document.getElementById('fixH').style.top=(cv.height/2)+'px';
   document.getElementById('fixV').style.left=(cv.width/2)+'px';
+  updateFixBox();
   updateFixPrev();
 }
 
 function updateFixPrev(){
   var img=fixSt.img;if(!img)return;
-  var sx=Math.round(fixSt.sx*img.width),sy=Math.round(fixSt.sy*img.height);
-  var regions=[[0,0,sx,sy],[sx,0,img.width-sx,sy],[0,sy,sx,img.height-sy],[sx,sy,img.width-sx,img.height-sy]];
   var container=document.getElementById('fixPrev');container.innerHTML='';
-  regions.forEach(function(r,i){
+  if(fixSt.mode==='grid'){
+    var sx=Math.round(fixSt.sx*img.width),sy=Math.round(fixSt.sy*img.height);
+    var regions=[[0,0,sx,sy],[sx,0,img.width-sx,sy],[0,sy,sx,img.height-sy],[sx,sy,img.width-sx,img.height-sy]];
+    regions.forEach(function(r,i){
+      var div=document.createElement('div');div.className='fix-preview';
+      var cv=document.createElement('canvas');
+      var ps=Math.min(150/Math.max(r[2],1),150/Math.max(r[3],1),1);
+      cv.width=Math.max(1,Math.round(r[2]*ps));cv.height=Math.max(1,Math.round(r[3]*ps));
+      var ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(img,r[0],r[1],r[2],r[3],0,0,cv.width,cv.height);
+      var id=ctx.getImageData(0,0,cv.width,cv.height),d=id.data;
+      for(var px=0;px<d.length;px+=4){
+        var cr=d[px],cg=d[px+1],cb=d[px+2];
+        var isBg=false;
+        if(bg==='green')isBg=(cr<80&&cg>160&&cb<80);
+        else if(bg==='blue')isBg=(cr<80&&cg<80&&cb>160);
+        else isBg=(cr>200&&cg<50&&cb>200);
+        if(isBg)d[px+3]=0;
+      }
+      ctx.putImageData(id,0,0);
+      var lbl=document.createElement('div');lbl.className='plbl';lbl.textContent='Cell '+(i+1)+': '+r[2]+'x'+r[3];
+      div.appendChild(cv);div.appendChild(lbl);container.appendChild(div);
+    });
+  }else{
+    var bx=Math.round(fixSt.box.x/fixSt.sc),by=Math.round(fixSt.box.y/fixSt.sc);
+    var bw=Math.round(fixSt.box.w/fixSt.sc),bh=Math.round(fixSt.box.h/fixSt.sc);
     var div=document.createElement('div');div.className='fix-preview';
     var cv=document.createElement('canvas');
-    var ps=Math.min(150/Math.max(r[2],1),150/Math.max(r[3],1),1);
-    cv.width=Math.max(1,Math.round(r[2]*ps));cv.height=Math.max(1,Math.round(r[3]*ps));
+    var ps=Math.min(150/Math.max(bw,1),150/Math.max(bh,1),1);
+    cv.width=Math.max(1,Math.round(bw*ps));cv.height=Math.max(1,Math.round(bh*ps));
     var ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(img,r[0],r[1],r[2],r[3],0,0,cv.width,cv.height);
-    // chroma key preview
+    ctx.drawImage(img,bx,by,bw,bh,0,0,cv.width,cv.height);
     var id=ctx.getImageData(0,0,cv.width,cv.height),d=id.data;
     for(var px=0;px<d.length;px+=4){
-      var r=d[px],g=d[px+1],b=d[px+2];
+      var cr=d[px],cg=d[px+1],cb=d[px+2];
       var isBg=false;
-      if(bg==='green')isBg=(r<80&&g>160&&b<80);
-      else if(bg==='blue')isBg=(r<80&&g<80&&b>160);
-      else isBg=(r>200&&g<50&&b>200);
+      if(bg==='green')isBg=(cr<80&&cg>160&&cb<80);
+      else if(bg==='blue')isBg=(cr<80&&cg<80&&cb>160);
+      else isBg=(cr>200&&cg<50&&cb>200);
       if(isBg)d[px+3]=0;
     }
     ctx.putImageData(id,0,0);
-    var lbl=document.createElement('div');lbl.className='plbl';lbl.textContent='Cell '+(i+1)+': '+r[2]+'x'+r[3];
+    var lbl=document.createElement('div');lbl.className='plbl';lbl.textContent='Box: '+bw+'x'+bh;
     div.appendChild(cv);div.appendChild(lbl);container.appendChild(div);
-  });
+  }
 }
 
 function applyFix(){
   var img=fixSt.img;if(!img)return;
   var prefix=fixSt.prefix;
-  var sx=Math.round(fixSt.sx*img.width),sy=Math.round(fixSt.sy*img.height);
-  var regions=[[0,0,sx,sy],[sx,0,img.width-sx,sy],[0,sy,sx,img.height-sy],[sx,sy,img.width-sx,img.height-sy]];
-  var newCells=[];
-  regions.forEach(function(r,i){
-    var cv=document.createElement('canvas');cv.width=r[2];cv.height=r[3];
-    cv.getContext('2d').drawImage(img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
-    newCells.push({index:i,image:cv.toDataURL('image/png'),path:cells[prefix][i]?cells[prefix][i].path:''});
-  });
-  renderCells(prefix,newCells);
+  if(fixSt.mode==='grid'){
+    var sx=Math.round(fixSt.sx*img.width),sy=Math.round(fixSt.sy*img.height);
+    var regions=[[0,0,sx,sy],[sx,0,img.width-sx,sy],[0,sy,sx,img.height-sy],[sx,sy,img.width-sx,img.height-sy]];
+    var newCells=[];
+    regions.forEach(function(r,i){
+      var cv=document.createElement('canvas');cv.width=r[2];cv.height=r[3];
+      cv.getContext('2d').drawImage(img,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);
+      newCells.push({index:i,image:cv.toDataURL('image/png'),path:cells[prefix][i]?cells[prefix][i].path:''});
+    });
+    renderCells(prefix,newCells);
+  }else{
+    var bx=Math.round(fixSt.box.x/fixSt.sc),by=Math.round(fixSt.box.y/fixSt.sc);
+    var bw=Math.round(fixSt.box.w/fixSt.sc),bh=Math.round(fixSt.box.h/fixSt.sc);
+    var cv=document.createElement('canvas');cv.width=bw;cv.height=bh;
+    cv.getContext('2d').drawImage(img,bx,by,bw,bh,0,0,bw,bh);
+    var newCell={index:0,image:cv.toDataURL('image/png'),path:'box_extract.png'};
+    renderCells(prefix,[newCell]);
+  }
   closeFix();
 }
 
 // Fix line dragging
 var fixDrag=null;
 document.addEventListener('mousedown',function(e){
+  if(fixSt.mode==='box'){
+    if(e.target.id==='fixCv'||e.target.id==='fixWrap'){
+      var wrap=document.getElementById('fixWrap');var rect=wrap.getBoundingClientRect();
+      fixSt.box.x=e.clientX-rect.left;fixSt.box.y=e.clientY-rect.top;
+      fixSt.box.w=0;fixSt.box.h=0;fixSt.box.active=true;
+      fixDrag='box';e.preventDefault();
+    }
+    return;
+  }
   if(e.target.id==='fixH'){fixDrag='h';e.preventDefault()}
   if(e.target.id==='fixV'){fixDrag='v';e.preventDefault()}
 });
@@ -517,6 +605,12 @@ document.addEventListener('mousemove',function(e){
   if(fixDrag==='v'){
     var x=Math.max(10,Math.min(rect.width-10,e.clientX-rect.left));
     document.getElementById('fixV').style.left=x+'px';fixSt.sx=x/rect.width;
+  }
+  if(fixDrag==='box'){
+    var x=Math.max(0,Math.min(rect.width,e.clientX-rect.left));
+    var y=Math.max(0,Math.min(rect.height,e.clientY-rect.top));
+    fixSt.box.w=x-fixSt.box.x;fixSt.box.h=y-fixSt.box.y;
+    updateFixBox();
   }
   updateFixPrev();
 });
